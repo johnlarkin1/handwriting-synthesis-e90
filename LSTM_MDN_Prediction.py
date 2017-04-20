@@ -384,6 +384,15 @@ def make_plot(epoch, loss, test_data, pred):
     plt.title(titlestr)
     plt.savefig('test_data_pred_lstm_2.pdf')
 
+def make_heat_plot(epoch, loss, query_data, pred):
+    titlestr = '{} query set loss = {:.2f}'.format(epoch,loss)
+
+    plt.clf()
+    plt.pcolormesh(query_data[:,0], query_data[:,1], p)
+    plt.plot(query_data[:,0], query_data[:,1], 'ko', alpha = 0.85)
+    plt.title(titlestr)
+    plt.savefig('LSTM Query Heat Map.pdf')
+
 ######################################################################
 # main function
     
@@ -491,14 +500,15 @@ def main():
             l = valid_model.run_epoch(session)
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
-            l, pred = test_model.run_epoch(session, return_predictions=True)
-            make_plot('epoch {}'.format(epoch), l, test_data, pred)
+            l, pred = query_model.run_epoch(session, return_predictions=True)
+            print(pred.shape)
+            make_heat_plot('epoch {}'.format(epoch), l, query_data, pred)
             
             print()
 
     # do final update
     l, pred = query_model.run_epoch(session, return_predictions=True)
-    make_plot('final', l, test_data, pred)
+    make_heat_plot('final', l, query_data, pred)
     
 
 if __name__ == '__main__':
