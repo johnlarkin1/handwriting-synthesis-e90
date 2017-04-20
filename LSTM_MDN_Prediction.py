@@ -304,7 +304,7 @@ class LSTMCascade(object):
             self.train_op = None
 
 
-    def run_epoch(self, session, return_predictions=False):
+    def run_epoch(self, session, return_predictions=False, query=False):
         # we always fetch loss because we will return it, we also
         # always fetch the final state because we need to pass it
         # along to the next batch in the loop below.
@@ -365,6 +365,8 @@ class LSTMCascade(object):
         # return one or two things
         if not return_predictions:
             return total_loss
+        elif query:
+            return total_loss, all_outputs[-1]
         else:
             return total_loss, np.vstack(all_outputs)
             
@@ -384,12 +386,16 @@ def make_plot(epoch, loss, test_data, pred):
     plt.title(titlestr)
     plt.savefig('test_data_pred_lstm_2.pdf')
 
-def make_heat_plot(epoch, loss, query_data, xrng, yrng, pred):
-    p = pred.reshape(xrng)
+def make_heat_plot(epoch, loss, query_data, xrng, yrng, xg, pred):
+    print('query_data.shape', query_data.shape)
+    print('xrng',xrng.shape)
+    print('xg.shape', xg.shape)
+    print('pred.shape', pred.shape)
+    p = pred.reshape(xg.shape)
     titlestr = '{} query set loss = {:.2f}'.format(epoch,loss)
 
     plt.clf()
-    plt.pcolormesh(xrng, yrng, pred)
+    plt.pcolormesh(xrng, yrng, p)
     plt.plot(query_data[:,0], query_data[:,1], 'ko', alpha = 0.85)
     plt.title(titlestr)
     plt.savefig('LSTM Query Heat Map.pdf')
@@ -501,15 +507,15 @@ def main():
             l = valid_model.run_epoch(session)
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
-            l, pred = query_model.run_epoch(session, return_predictions=True)
+            l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
             print(pred.shape)
-            make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, pred)
+            make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, pred)
             
             print()
 
     # do final update
-    l, pred = query_model.run_epoch(session, return_predictions=True)
-    make_heat_plot('final', l, query_data, xrng, yrng, pred)
+    l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+    make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
     
 
 if __name__ == '__main__':
