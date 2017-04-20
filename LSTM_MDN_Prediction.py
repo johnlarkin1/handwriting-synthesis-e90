@@ -492,7 +492,7 @@ def main():
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
             l, pred = test_model.run_epoch(session, return_predictions=True)
-            # make_plot('epoch {}'.format(epoch), l, test_data, pred)
+            make_plot('epoch {}'.format(epoch), l, test_data, pred)
             
             print()
 
