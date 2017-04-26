@@ -396,7 +396,7 @@ def make_plot(epoch, loss, test_data, pred):
     plt.plot(pred[:,0], pred[:,1], 'r.')
     plt.axis('equal')
     plt.title(titlestr)
-    plt.savefig('test_data_pred_lstm_2.pdf')
+    plt.savefig('test_data_pred_lstm_3.pdf')
 
 def make_heat_plot(epoch, loss, query_data, xrng, yrng, xg, pred):
     p = pred.reshape(xg.shape)
@@ -406,7 +406,7 @@ def make_heat_plot(epoch, loss, query_data, xrng, yrng, xg, pred):
     plt.pcolormesh(xrng, yrng, p)
     plt.plot(query_data[:,0], query_data[:,1], 'wo', alpha = 0.85)
     plt.title(titlestr)
-    plt.savefig('LSTM Query Heat Map.pdf')
+    plt.savefig('LSTM Query Heat Map3.pdf')
 
 ######################################################################
 # main function
@@ -438,11 +438,14 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
+    our_train_data = data.data[0:1000]
+    our_valid_data = data.valid_data[0:1000]
+
     # generate our train data
-    train_data, train_seq = get_data(data.data)
+    train_data, train_seq = get_data(our_train_data)
 
     # get our validation data
-    valid_data, valid_seq = get_data(data.valid_data)
+    valid_data, valid_seq = get_data(our_valid_data)
 
     # generate test data
     # test_data = get_data(1000)
