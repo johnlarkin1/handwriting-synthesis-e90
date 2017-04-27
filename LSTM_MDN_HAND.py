@@ -509,8 +509,8 @@ def main():
     int_query_data = integrate(query_data, query_seq)
     # int_query_y = query_seq[:,1] * 6
     # itq = -int_query_data[:,1] + int_query_y
-    xmin, xmax = query_data[:,0].min(), query_data[:,0].max()
-    ymin, ymax = query_data[:,1].min(), query_data[:,1].max()
+    xmin, xmax = int_query_data[:,0].min(), int_query_data[:,0].max()
+    ymin, ymax = int_query_data[:,1].min(), int_query_data[:,1].max()
     print('xmin: {} xmax: {} \n ymin: {} ymax: {}'.format(xmin,xmax,ymin,ymax))
 
     xrng = np.linspace(xmin, xmax, 200, True)
@@ -593,7 +593,7 @@ def main():
             l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
             #for i, p in enumerate(pred):
             #    make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, p, i)
-            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 1)
+            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 2)
             print()
 
     # do final update
