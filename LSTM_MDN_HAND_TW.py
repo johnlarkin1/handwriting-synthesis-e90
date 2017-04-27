@@ -318,7 +318,7 @@ class LSTMCascade(object):
             self.mixture_prob = ourMDN.return_mixture_prob()
 
         # loss is calculated in our MDN
-        self.loss = loss
+        self.loss = tf.reduce_sum(loss)
 
         self.loss /= tf.maximum(tf.reduce_sum(model_input.err_weight),1)
 
