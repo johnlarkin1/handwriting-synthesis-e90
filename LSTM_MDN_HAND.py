@@ -18,10 +18,10 @@ PLOT = 1
 d_type = tf.float32
 
 # Batch size for training
-train_batch_size = 20
+train_batch_size = 5
 
 # Number of steps (RNN rollout) for training
-train_num_steps = 8
+train_num_steps = 200
 
 # Dimension of LSTM input/output
 hidden_size = 3
@@ -30,10 +30,13 @@ hidden_size = 3
 train_keep_prob = 0.80
 
 # number of training epochs
-num_epochs = 2500
+num_epochs = 1000
 
 # how often to print/plot
-update_every = 250
+update_every = 10
+
+# how often to save
+save_every = 10 
 
 # initial weight scaling
 init_scale = 0.1
@@ -49,6 +52,9 @@ handle_sequences_correctly = True
 
 # do xy offsets or not
 do_diff = True
+
+# learning rate
+learning_rate = 1e-4
 
 ######################################################################
 # Helper function for below
@@ -146,7 +152,7 @@ class Input(object):
 
             # each slice consists of num_steps*batch_size examples
             x = tf.slice(data, [0, i*num_steps, 0], [batch_size, num_steps, 3])
-            y = tf.slice(data, [0, i*num_steps+1, 0], [batch_size, num_steps, 2])
+            y = tf.slice(data, [0, i*num_steps+1, 0], [batch_size, num_steps, 3])
 
             preserve_state = tf.slice(seq, [0, i*num_steps], [batch_size, num_steps])
             err_weight = tf.slice(seq, [0, i*num_steps+1], [batch_size, num_steps])
@@ -293,26 +299,38 @@ class LSTMCascade(object):
 
         if external_targets is None:
             # reshape original targets down to rank-2 tensor
-            targets_rank2 = tf.reshape(model_input.y, [batch_size*num_steps, 2])
+            targets_rank2 = tf.reshape(model_input.y, [batch_size*num_steps, 3])
         else:
-            targets_rank2 = external_targets
+            targets_rank2 = tf.reshape(external_targets, [-1, 3])
 
         with tf.variable_scope('MDN'):
             ourMDN = MDN(lstm_output_rank2, targets_rank2, final_high_dimension, is_train)
 
         # The loss is now calculated from our MDN
-        loss = ourMDN.compute_loss()
+        MDNloss, log_loss = ourMDN.compute_loss()
+        self.log_loss = log_loss
+        if external_targets is None:
+            log_loss = tf.reshape(log_loss, [batch_size, num_steps,1])
 
-        # What we now care about is the mixture probabilities from our MDN
+            loss = log_loss * model_input.err_weight
+            self.loss_by_err_wt = loss
+            # err_weight = tf.slice(seq, [0, i*num_steps+1], [batch_size, num_steps])
+            # What we now care about is the mixture probabilities from our MDN
+        else:
+            loss = MDNloss
+
         with tf.variable_scope('MDN'):
             self.mixture_prob = ourMDN.return_mixture_prob()
 
         # loss is calculated in our MDN
-        self.loss = loss
-
+        self.loss = tf.reduce_sum(loss)
+	self.loss_before_max = self.loss
+        self.err_wt_reduce_sum = tf.reduce_sum(model_input.err_weight)
+        self.loss /= tf.maximum(tf.reduce_sum(model_input.err_weight),1)
+        self.after_max_division = self.loss
         # generate a train_op if we need to
         if is_train:
-            self.train_op = tf.train.RMSPropOptimizer(0.001).minimize(self.loss)
+            self.train_op = tf.train.RMSPropOptimizer(learning_rate).minimize(self.loss)
         else:
             self.train_op = None
 
@@ -324,7 +342,11 @@ class LSTMCascade(object):
         # final state is now a list!! Update!! of three state tensors
         fetches = {
             'loss': self.loss,
-            'final_state': self.final_state
+            'final_state': self.final_state,
+            'log loss' : self.log_loss,
+	    'loss before max': self.loss_before_max,
+            'err wt reduce sum': self.err_wt_reduce_sum,
+	    'after tf.max div': self.after_max_division,
         }
 
         # we need to run the training op if we are doing training
@@ -357,6 +379,7 @@ class LSTMCascade(object):
 
                 # run the computation graph?
                 vals = session.run(fetches, feed_dict)
+                #print(vals)
 
                 # get the final LSTM state for the next iteration
                 state = vals['final_state']
@@ -386,27 +409,58 @@ class LSTMCascade(object):
 ######################################################################
 # plot input vs predictions
 
-def make_plot(epoch, loss, test_data, pred):
+def integrate(xyoffs, seq):
+
+    # split up into subsequences
+    n = xyoffs.shape[0]
+    
+    start_indices = np.nonzero(seq[:,0] == 0)[0]
+    print('start indices: {}'.format(start_indices))
+
+    all_outputs = []
+
+    for i, start_idx in enumerate(start_indices):
+        if i + 1 < len(start_indices):
+            end_idx = start_indices[i+1]
+        else:
+            end_idx = n
+        xyslice = xyoffs[start_idx:end_idx]
+        all_outputs.append(np.cumsum(xyslice, axis=0))
+
+    return np.vstack(tuple(all_outputs))
+
+def make_plot(epoch, loss, data, seq, pred):
 
     titlestr = '{} test set loss = {:.2f}'.format(epoch, loss)
     print(titlestr)
 
+    y = seq[:,1] * 6
+
+    if do_diff:
+        data = integrate(data, seq)
+        pred = integrate(pred, seq)
+
     plt.clf()
-    plt.plot(test_data[:,0], test_data[:,1], 'b.')
-    plt.plot(pred[:,0], pred[:,1], 'r.')
+    plt.plot(data[:,0], data[:,1]+y, 'b.')
+    plt.plot(pred[:,0], pred[:,1]+y, 'r.')
     plt.axis('equal')
     plt.title(titlestr)
     plt.savefig('test_data_pred_lstm_3.pdf')
 
-def make_heat_plot(epoch, loss, query_data, xrng, yrng, xg, pred):
+def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     p = pred.reshape(xg.shape)
     titlestr = '{} query set loss = {:.2f}'.format(epoch,loss)
 
+    y = seq[:,1] * 6
+    query_data = integrate(query_data, seq)
+    last_point = query_data[-1]
     plt.clf()
-    plt.pcolormesh(xrng, yrng, p)
-    plt.plot(query_data[:,0], query_data[:,1], 'wo', alpha = 0.85)
+    plt.pcolormesh(xrng+last_point[0], -(yrng+last_point[1]), p)
+    plt.plot(query_data[:,0], -query_data[:,1], 'm-', alpha = 0.85, linewidth=0.1)
     plt.title(titlestr)
-    plt.savefig('LSTM Query Heat Map3.pdf')
+    plt.savefig('LSTMHeatMap' + str(i) + '.pdf')
+
+
 
 ######################################################################
 # main function
@@ -438,8 +492,9 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:1000]
-    our_valid_data = data.valid_data[0:1000]
+    our_train_data = data.data[0:100]
+    our_valid_data = data.valid_data[0:100]
+    our_query_data = data.valid_data[500:502]
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
@@ -447,21 +502,27 @@ def main():
     # get our validation data
     valid_data, valid_seq = get_data(our_valid_data)
 
-    # generate test data
-    # test_data = get_data(1000)
+    # get the query data
+    query_data, query_seq = get_data(our_query_data)
+    query_data, query_seq = query_data[200:900, :], query_seq[200:900,:]
 
-    # xmin, xmax = test_data[:,0].min(), test_data[:,0].max()
-    # ymin, ymax = test_data[:,1].min(), test_data[:,1].max()
+    int_query_data = integrate(query_data, query_seq)
+    # int_query_y = query_seq[:,1] * 6
+    # itq = -int_query_data[:,1] + int_query_y
+    xmin, xmax = query_data[:,0].min(), query_data[:,0].max()
+    ymin, ymax = query_data[:,1].min(), query_data[:,1].max()
+    print('xmin: {} xmax: {} \n ymin: {} ymax: {}'.format(xmin,xmax,ymin,ymax))
 
-    # xrng = np.linspace(xmin, xmax, 200, True)
-    # yrng = np.linspace(ymin, ymax, 200, True)
+    xrng = np.linspace(xmin, xmax, 200, True)
+    yrng = np.linspace(ymin, ymax, 200, True)
 
-    # xg, yg = np.meshgrid(xrng, yrng)
+    xg, yg = np.meshgrid(xrng, yrng)
 
-    # xreshape, yreshape = xg.reshape(-1,1), yg.reshape(-1,1)
+    xreshape, yreshape = xg.reshape(-1,1), yg.reshape(-1,1)
+    third_col = np.ones(xreshape.shape)
 
-    # mesh_target = np.hstack([xreshape, yreshape])
-    # mesh_target = mesh_target.reshape(-1, 1, 2).astype('float32')
+    mesh_target = np.hstack([xreshape, yreshape, third_col])
+    mesh_target = mesh_target.reshape(-1, 1, 3).astype('float32')
 
     # # generate visualization data 
     # query_data = train_data[0:40,:]
@@ -483,28 +544,30 @@ def main():
     #     with tf.variable_scope('model', reuse=True, initializer=initializer):
     #         test_model = LSTMCascade(test_config, test_input, is_train=False)
 
-    # with tf.name_scope('query'):
-    #     query_input = Input(query_data, query_config)
-    #     with tf.variable_scope('model', reuse=True, initializer=initializer):
-    #         query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
+    with tf.name_scope('query'):
+        query_input = Input(query_data, query_seq, query_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
 
     # print out all trainable variables:
     tvars = tf.trainable_variables()
     print('trainable variables:')
     print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
 
-    # let's save our computation graph
-    saver = tf.train.Saver()
-
     # create a session
     session = tf.Session()
 
+    # let's save our computation graph IF we don't already have a parameter
+    if len(sys.argv) > 1:
+        saver = tf.train.import_meta_graph('LSTM-MDN-model.meta')
+        saver.restore(session, tf.train.latest_checkpoint('./'))
+    else:
+        saver = tf.train.Saver()
+    
     # need to explicitly start the queue runners so the index variable
     # doesn't hang. (not sure how PTB did this - I think the
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
-    for tvar in tvars:
-        tf.add_to_collection('tvars',tvar)
 
     # initialize all the variables
     session.run(tf.global_variables_initializer())
@@ -514,11 +577,10 @@ def main():
 
         # run the epoch & get training loss
         l = train_model.run_epoch(session)
-        print('training loss at epoch {}    is {:.2f}'.format(epoch, l))
-        if epoch % 250 == 0:
+        print('training loss at epoch {}    is {}'.format(epoch, l))
+        if epoch % save_every == 0:
             print('Saving model..... ')
             saver.save(session, 'LSTM-MDN-model')
-            print('training loss at epoch {} is {:.2f}'.format(epoch, l))
 
         # see if we should do a printed/graphical update
         if epoch % update_every == 0:
@@ -528,9 +590,10 @@ def main():
             l = valid_model.run_epoch(session)
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
-            # l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-            # make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, pred)
-            
+            l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+            #for i, p in enumerate(pred):
+            #    make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, p, i)
+            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 1)
             print()
 
     # do final update
