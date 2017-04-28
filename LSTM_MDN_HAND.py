@@ -614,7 +614,7 @@ def main():
         if CREATE_GIFS:
             for idx, model in enumerate(query_models):
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
-                make_heat_plot('Model {}'.format(idx), l, query_data[0:i,:], query_seq[0:i,:], xrng, yrng, xg, pred, idx)
+                make_heat_plot('Model {}'.format(idx), l, query_data[0:idx,:], query_seq[0:idx,:], xrng, yrng, xg, pred, idx)
 
     else:
 
