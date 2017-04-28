@@ -182,6 +182,10 @@ class LSTMCascade(object):
         keep_prob = config.keep_prob
 
         # Scale factor so we can vary dataset size and see "average" loss
+        # Do this in case we're just looking at a single point and we're querying
+        if model_input.epoch_size == 0:
+            model_input.epoch_size = 1
+            
         self.loss_scale = batch_size * num_steps * model_input.epoch_size
 
         # Stash input
@@ -328,7 +332,7 @@ class LSTMCascade(object):
 
         # loss is calculated in our MDN
         self.loss = tf.reduce_sum(loss)
-	self.loss_before_max = self.loss
+        self.loss_before_max = self.loss
         self.err_wt_reduce_sum = tf.reduce_sum(model_input.err_weight)
         self.loss /= tf.maximum(tf.reduce_sum(model_input.err_weight),1)
         self.after_max_division = self.loss
