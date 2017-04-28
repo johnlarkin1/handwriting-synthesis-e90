@@ -456,10 +456,10 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     last_point = query_data[-1]
     plt.clf()
     plt.pcolormesh(xrng+last_point[0], -(yrng+last_point[1]), p)
-    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.85, linewidth=1)
+    plt.plot(query_data[:,0], -query_data[:,1], 'w.', alpha = 0.85, linewidth=1)
     plt.axis('equal')
     plt.title(titlestr)
-    plt.savefig('LSTMHeatMap' + str(i) + '.png', bbox_inches='tight')
+    plt.savefig('Plots/LSTMHeatMap' + str(i) + '.png', bbox_inches='tight')
 
 
 
