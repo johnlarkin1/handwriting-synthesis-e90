@@ -597,7 +597,7 @@ def main():
 
             l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
             for i, p in enumerate(pred):
-               make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, p, i)
+               make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, p, i)
             # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 2)
             print()
 
