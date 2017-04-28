@@ -470,7 +470,7 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     ax.yaxis.set_visible(False)
     # plt.show()
     plt.title(titlestr)
-    plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight', pad_inches = 0)
+    plt.savefig('Plots/LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight', pad_inches = 0)
 
 ######################################################################
 # main function
