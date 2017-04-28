@@ -504,7 +504,7 @@ def main():
 
     our_train_data = data.data[0:100]
     our_valid_data = data.valid_data[0:100]
-    our_query_data = data.valid_data[560:562]
+    our_query_data = data.valid_data[304:306]
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
@@ -514,7 +514,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[0:72, :], query_seq[0:72,:]
+    query_data, query_seq = query_data[0:178, :], query_seq[0:178,:]
 
     # TODO: perfect visualization
     # Let's get our mesh grid for visualization
@@ -606,7 +606,7 @@ def main():
         print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
 
         l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
+        make_heat_plot('Model {}'.format(0), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
 
         if CREATE_GIFS:
             for idx, model in enumerate(query_models):
