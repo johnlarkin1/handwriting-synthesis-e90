@@ -595,9 +595,9 @@ def main():
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
             l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-            for i, p in enumerate(pred):
-               make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, p, i)
-            # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 2)
+            # for i, p in enumerate(pred):
+               # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, p, i)
+            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
             print()
 
     # do final update
