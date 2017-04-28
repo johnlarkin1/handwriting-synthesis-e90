@@ -191,7 +191,7 @@ class LSTMCascade(object):
         self.lstm_input = model_input.x
 
         # this is going to be the final dimension 
-        # interestingly enough this is always even
+        # this is always even
         final_high_dimension = input_dimension * steps_in_cascade * (steps_in_cascade+1) // 2
 
         # note: input dimension is equivalent to the hidden size of the LSTM cell
@@ -514,7 +514,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[200:825, :], query_seq[200:825,:]
+    query_data, query_seq = query_data[500:818, :], query_seq[500:818,:]
 
     # TODO: perfect visualization
     # Let's get our mesh grid for visualization
