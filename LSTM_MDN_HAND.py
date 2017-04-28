@@ -344,9 +344,9 @@ class LSTMCascade(object):
             'loss': self.loss,
             'final_state': self.final_state,
             'log loss' : self.log_loss,
-	    'loss before max': self.loss_before_max,
+	       'loss before max': self.loss_before_max,
             'err wt reduce sum': self.err_wt_reduce_sum,
-	    'after tf.max div': self.after_max_division,
+	       'after tf.max div': self.after_max_division,
         }
 
         # we need to run the training op if we are doing training
@@ -457,6 +457,7 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     plt.clf()
     plt.pcolormesh(xrng+last_point[0], -(yrng+last_point[1]), p)
     plt.plot(query_data[:,0], -query_data[:,1], 'm-', alpha = 0.85, linewidth=0.1)
+    plt.axis('equal')
     plt.title(titlestr)
     plt.savefig('LSTMHeatMap' + str(i) + '.pdf')
 
@@ -506,11 +507,15 @@ def main():
     query_data, query_seq = get_data(our_query_data)
     query_data, query_seq = query_data[200:900, :], query_seq[200:900,:]
 
+    # TODO: perfect visualization
+    # Let's get our mesh grid for visualization
     int_query_data = integrate(query_data, query_seq)
     # int_query_y = query_seq[:,1] * 6
     # itq = -int_query_data[:,1] + int_query_y
-    xmin, xmax = int_query_data[:,0].min(), int_query_data[:,0].max()
-    ymin, ymax = int_query_data[:,1].min(), int_query_data[:,1].max()
+
+    last_point = int_query_data[-1]
+    xmin, xmax = (int_query_data[:,0]-last_point[0]).min()-10, (int_query_data[:,0]-last_point[0]).max()+10
+    ymin, ymax = ((int_query_data[:,1]-last_point[1]).min()-10), ((int_query_data[:,1]-last_point[1]).max()+10)
     print('xmin: {} xmax: {} \n ymin: {} ymax: {}'.format(xmin,xmax,ymin,ymax))
 
     xrng = np.linspace(xmin, xmax, 200, True)
@@ -591,9 +596,9 @@ def main():
             print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
             l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-            #for i, p in enumerate(pred):
-            #    make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, p, i)
-            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 2)
+            for i, p in enumerate(pred):
+               make_heat_plot('epoch {}'.format(epoch), l, query_data, xrng, yrng, xg, p, i)
+            # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 2)
             print()
 
     # do final update
