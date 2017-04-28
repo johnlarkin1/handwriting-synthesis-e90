@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from collections import namedtuple
 import sys
+import os
 
 from MDNClass import MDN
 from DataLoader import DataLoader
