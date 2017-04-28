@@ -568,6 +568,7 @@ def main():
     # else:
     #     saver = tf.train.Saver()
 
+    saver = tf.train.Saver()
     
     # need to explicitly start the queue runners so the index variable
     # doesn't hang. (not sure how PTB did this - I think the
