@@ -561,12 +561,12 @@ def main():
     # create a session
     session = tf.Session()
 
-    # let's save our computation graph IF we don't already have a parameter
-    if len(sys.argv) > 1:
-        saver = tf.train.import_meta_graph('LSTM-MDN-model.meta')
-        saver.restore(session, tf.train.latest_checkpoint('./'))
-    else:
-        saver = tf.train.Saver()
+    # # let's save our computation graph IF we don't already have a parameter
+    # if len(sys.argv) > 1:
+    #     saver = tf.train.import_meta_graph('LSTM-MDN-model.meta')
+    #     saver.restore(session, tf.train.latest_checkpoint('./'))
+    # else:
+    #     saver = tf.train.Saver()
 
     
     # need to explicitly start the queue runners so the index variable
