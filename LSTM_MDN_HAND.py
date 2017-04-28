@@ -531,8 +531,8 @@ def main():
 
     mesh_target = np.hstack([xreshape, yreshape, third_col])
     mesh_target = mesh_target.reshape(-1, 1, 3).astype('float32')
-
-    make_heat_plot(4,4, query_data, query_seq, xrng, yrng, xg, p, 777)
+    pt = np.zeros(xg.shape)
+    make_heat_plot(4,4, query_data, query_seq, xrng, yrng, xg, pt, 777)
     # # generate visualization data 
     # query_data = train_data[0:40,:]
 
