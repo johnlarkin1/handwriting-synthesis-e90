@@ -57,6 +57,9 @@ do_diff = True
 # learning rate
 learning_rate = 1e-4
 
+# do we want gifs?!
+CREATE_GIFS = True
+
 ######################################################################
 # Helper function for below
 
@@ -456,7 +459,7 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     last_point = query_data[-1]
     plt.clf()
     plt.pcolormesh(xrng+last_point[0], -(yrng+last_point[1]), p)
-    plt.plot(query_data[:,0], -query_data[:,1], 'w.', alpha = 0.85, linewidth=1)
+    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.85, markersize=5)
     plt.axis('equal')
     plt.title(titlestr)
     plt.savefig('Plots/LSTMHeatMap' + str(i) + '.png', bbox_inches='tight')
@@ -554,6 +557,14 @@ def main():
         with tf.variable_scope('model', reuse=True, initializer=initializer):
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
 
+    if CREATE_GIFS:
+        query_models = []
+        for i in range(1,len(query_data)):
+            with tf.name_scope('gif_query'+str(i)):
+                query_input = Input(query_data[0:i,:], query_seq[0:i,:], query_config)
+                with tf.variable_scope('model', reuse=True, initializer=initializer):
+                    query_models.append(LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target))
+
     # print out all trainable variables:
     tvars = tf.trainable_variables()
     print('trainable variables:')
@@ -576,6 +587,7 @@ def main():
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
+    # if this is true then we want to load in our model and just query right away
     if len(sys.argv) > 1:
 
         saver.restore(session, sys.argv[1])
@@ -584,6 +596,15 @@ def main():
         
         tvars = tf.global_variables()
         print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
+
+        l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+        make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
+
+        if CREATE_GIFS:
+            for idx, model in enumerate(query_models):
+                l, pred = model.run_epoch(session,return_predictions=True, query=True)
+                make_heat_plot('Model {}'.format(idx), l, query_data[0:i,:], query_seq[0:i,:], xrng, yrng, xg, pred, idx)
+
 
     else:
 
