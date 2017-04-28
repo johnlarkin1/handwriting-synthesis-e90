@@ -57,7 +57,7 @@ do_diff = True
 # learning rate
 learning_rate = 1e-4
 
-# do we want gifs?!
+# do we want gifs?! yes?
 CREATE_GIFS = False
 
 ######################################################################
