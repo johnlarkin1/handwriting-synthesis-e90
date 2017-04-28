@@ -33,7 +33,7 @@ train_keep_prob = 0.80
 num_epochs = 1000
 
 # how often to print/plot
-update_every = 10
+update_every = 1
 
 # how often to save
 save_every = 10 
@@ -567,42 +567,62 @@ def main():
         saver.restore(session, tf.train.latest_checkpoint('./'))
     else:
         saver = tf.train.Saver()
+
     
     # need to explicitly start the queue runners so the index variable
     # doesn't hang. (not sure how PTB did this - I think the
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
-    # initialize all the variables
-    session.run(tf.global_variables_initializer())
+    if len(sys.argv) > 1:
 
-    # for each epoch
-    for epoch in range(num_epochs):
+        saver.restore(session, sys.argv[1])
 
-        # run the epoch & get training loss
-        l = train_model.run_epoch(session)
-        print('training loss at epoch {}    is {}'.format(epoch, l))
-        if epoch % save_every == 0:
-            print('Saving model..... ')
-            saver.save(session, 'LSTM-MDN-model')
+        print('did a restore. here are all the variables:')
+        
+        tvars = tf.global_variables()
+        print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
 
-        # see if we should do a printed/graphical update
-        if epoch % update_every == 0:
+    else:
 
-            print()
+        # initialize all the variables
+        session.run(tf.global_variables_initializer())
 
-            l = valid_model.run_epoch(session)
-            print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
+        # for each epoch
+        for epoch in range(num_epochs):
 
-            l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-            # for i, p in enumerate(pred):
-               # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, p, i)
-            make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
-            print()
+            # run the epoch & get training loss
+            l = train_model.run_epoch(session)
+            print('training loss at epoch {}    is {}'.format(epoch, l))
+            if epoch % save_every == 0:
+                print('Saving model..... ')
+                saver.save(session, 'LSTM-MDN-model')
 
-    # do final update
-    # l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-    # make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
+            # see if we should do a printed/graphical update
+            if epoch % update_every == 0:
+
+                print()
+
+                l = valid_model.run_epoch(session)
+                print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
+
+                l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+                make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
+
+                if not os.path.isdir('models'):
+                os.mkdir('models')
+
+                written_path = saver.save(session, 'models/rnn_demo',
+                          global_step=epoch)
+                print('saved model to {}'.format(written_path))
+
+                print()
+
+        written_path = saver.save(session, 'models/rnn_demo', global_step=num_epochs)
+        print('saved final model to {}'.format(written_path))
+        # do final update
+        l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+        make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
     
 
 if __name__ == '__main__':
