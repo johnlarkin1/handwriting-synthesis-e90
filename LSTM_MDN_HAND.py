@@ -610,7 +610,7 @@ def main():
                 make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
 
                 if not os.path.isdir('models'):
-                os.mkdir('models')
+                    os.mkdir('models')
 
                 written_path = saver.save(session, 'models/rnn_demo',
                           global_step=epoch)
