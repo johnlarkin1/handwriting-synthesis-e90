@@ -558,7 +558,7 @@ def main():
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
 
     if CREATE_GIFS:
-        query_data = 
+        query_data = query_data[0:201, :]
         query_models = []
         for i in range(1,len(query_data)):
             with tf.name_scope('gif_query'+str(i)):
