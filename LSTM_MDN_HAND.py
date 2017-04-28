@@ -58,7 +58,7 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?!
-CREATE_GIFS = True
+CREATE_GIFS = False
 
 ######################################################################
 # Helper function for below
@@ -558,6 +558,7 @@ def main():
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
 
     if CREATE_GIFS:
+        query_data = 
         query_models = []
         for i in range(1,len(query_data)):
             with tf.name_scope('gif_query'+str(i)):
