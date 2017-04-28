@@ -450,6 +450,7 @@ def make_plot(epoch, loss, data, seq, pred):
     plt.title(titlestr)
     plt.savefig('test_data_pred_lstm_3.pdf')
 
+
 def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     p = pred.reshape(xg.shape)
     titlestr = '{} query set loss = {:.2f}'.format(epoch,loss)
@@ -458,13 +459,18 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     query_data = integrate(query_data, seq)
     last_point = query_data[-1]
     plt.clf()
-    plt.pcolormesh(xrng+last_point[0], -(yrng+last_point[1]), p)
-    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.85, markersize=5)
+    ax = plt.gca()
+    xdata = xrng+last_point[0]
+    ydata = -(yrng+last_point[1])
+    plt.pcolormesh(xdata, ydata, p, cmap='jet')
+    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.90, markersize=5)
     plt.axis('equal')
+    plt.axis([xdata.min(), xdata.max(), ydata.min(), ydata.max()])
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    # plt.show()
     plt.title(titlestr)
-    plt.savefig('Plots/LSTMHeatMap' + str(i) + '.png', bbox_inches='tight')
-
-
+    plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight', pad_inches = 0)
 
 ######################################################################
 # main function
