@@ -185,7 +185,7 @@ class LSTMCascade(object):
         # Do this in case we're just looking at a single point and we're querying
         if model_input.epoch_size == 0:
             model_input.epoch_size = 1
-            
+
         self.loss_scale = batch_size * num_steps * model_input.epoch_size
 
         # Stash input
@@ -569,9 +569,8 @@ def main():
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
 
     if CREATE_GIFS:
-        query_data = query_data[0:201, :]
         query_models = []
-        for i in range(1,len(query_data)):
+        for i in range(2,len(query_data)):
             with tf.name_scope('gif_query'+str(i)):
                 query_input = Input(query_data[0:i,:], query_seq[0:i,:], query_config)
                 with tf.variable_scope('model', reuse=True, initializer=initializer):
