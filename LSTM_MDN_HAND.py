@@ -463,7 +463,7 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     xdata = xrng+last_point[0]
     ydata = -(yrng+last_point[1])
     plt.pcolormesh(xdata, ydata, p, cmap='jet')
-    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.90, markersize=5)
+    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.90, markersize=3)
     plt.axis('equal')
     plt.axis([xdata.min(), xdata.max(), ydata.min(), ydata.max()])
     ax.xaxis.set_visible(False)
@@ -514,7 +514,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[200:900, :], query_seq[200:900,:]
+    query_data, query_seq = query_data[200:825, :], query_seq[200:825,:]
 
     # TODO: perfect visualization
     # Let's get our mesh grid for visualization
