@@ -118,6 +118,8 @@ class Input(object):
 
         batch_size = config.batch_size
         num_steps = config.num_steps
+        self.data = posdata
+        self.seqinfo = seqinfo
 
         # I think we need this name scope to make sure that each
         # condition (train/valid/test) has its own unique producer?
@@ -476,6 +478,25 @@ def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     plt.title(titlestr)
     plt.savefig('Gifs/LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight', pad_inches = 0)
 
+def make_heat_plot_no_integrate(epoch, loss, query_data, xrng, yrng, xg, pred, i):
+    p = pred.reshape(xg.shape)
+    titlestr = '{} query set loss = {:.2f}'.format(epoch,loss)
+
+    last_point = query_data[-1]
+    plt.clf()
+    ax = plt.gca()
+    xdata = xrng+last_point[0]
+    ydata = -(yrng+last_point[1])
+    plt.pcolormesh(xdata, ydata, p, cmap='jet')
+    plt.plot(query_data[:,0], -query_data[:,1], 'wo', alpha = 0.90, markersize=5)
+    plt.axis('equal')
+    plt.axis([xdata.min(), xdata.max(), ydata.min(), ydata.max()])
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    plt.show()
+    # plt.title(titlestr)
+    # plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
+
 ######################################################################
 # main function
     
@@ -612,9 +633,17 @@ def main():
         make_heat_plot('Model {}'.format(0), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
 
         if CREATE_GIFS:
-            for idx, model in enumerate(query_models):
+            for model in query_models:
+                int_query_data = integrate(model.model_input.posdata, model.model_input.seqinfo)
+                last_point = int_query_data[-1]
+                xmin, xmax = (int_query_data[:,0]-last_point[0]).min()-10, (int_query_data[:,0]-last_point[0]).max()+10
+                ymin, ymax = ((int_query_data[:,1]-last_point[1]).min()-10), ((int_query_data[:,1]-last_point[1]).max()+10)
+
+                xrng = np.linspace(xmin, xmax, 200, True)
+                yrng = np.linspace(ymin, ymax, 200, True)
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
-                make_heat_plot('Model {}'.format(idx), l, query_data[0:idx,:], query_seq[0:idx,:], xrng, yrng, xg, pred, idx)
+
+                make_heat_plot('Model {}'.format(idx), l, model.model_input.posdata, model.model_input.seqinfo, xrng, yrng, xg, pred, idx)
 
     else:
 
