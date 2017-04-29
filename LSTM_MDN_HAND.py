@@ -58,7 +58,10 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = True
+CREATE_GIFS = False
+
+# do we want to generate handwriting 
+GENERATE_HANDWRITING = True
 
 ######################################################################
 # Helper function for below
@@ -417,6 +420,13 @@ class LSTMCascade(object):
         return self.mixture_prob
 
 ######################################################################
+# generate handwriting function
+def generate_writing(session, duration):
+    prev_x = np.zeros((1, 1, 3), dtype=np.float32)
+    prev_x[0, 0, 2] = 1 # initially, we want to see beginning of new stroke
+    prev_state = sess.run(self.cell.zero_state(1, tf.float32))
+
+######################################################################
 # plot input vs predictions
 
 def integrate(xyoffs, seq):
@@ -493,9 +503,9 @@ def make_heat_plot_no_integrate(epoch, loss, query_data, xrng, yrng, xg, pred, i
     plt.axis([xdata.min(), xdata.max(), ydata.min(), ydata.max()])
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
-    plt.show()
-    # plt.title(titlestr)
-    # plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
+    # plt.show()
+    plt.title(titlestr)
+    plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
 
 ######################################################################
 # main function
@@ -642,8 +652,11 @@ def main():
                 xrng = np.linspace(xmin, xmax, 200, True)
                 yrng = np.linspace(ymin, ymax, 200, True)
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
+                make_heat_plot_no_integrate('Model {}'.format(idx), l, model.model_input.posdata, xrng, yrng, xg, pred, idx)
 
-                make_heat_plot('Model {}'.format(idx), l, model.model_input.posdata, model.model_input.seqinfo, xrng, yrng, xg, pred, idx)
+        if GENERATE_HANDWRITING:
+
+
 
     else:
 
