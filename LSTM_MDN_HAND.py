@@ -58,10 +58,10 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = True
+CREATE_GIFS = False
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = False
+GENERATE_HANDWRITING = True
 
 ######################################################################
 # Helper function for below
@@ -188,9 +188,6 @@ class LSTMCascade(object):
 
         # Scale factor so we can vary dataset size and see "average" loss
         # Do this in case we're just looking at a single point and we're querying
-        if model_input.epoch_size == 0:
-            model_input.epoch_size = 1
-
         self.loss_scale = batch_size * num_steps * model_input.epoch_size
 
         # Stash input
@@ -318,6 +315,7 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             ourMDN = MDN(lstm_output_rank2, targets_rank2, final_high_dimension, is_train)
+            self.ourMDN = ourMDN
 
         # The loss is now calculated from our MDN
         MDNloss, log_loss = ourMDN.compute_loss()
@@ -421,10 +419,26 @@ class LSTMCascade(object):
 
 ######################################################################
 # generate handwriting function
-def generate_writing(session, duration):
+def generate_writing(session, model, duration=800):
+    # configs are just named tuples
+    Config = namedtuple('Config', 'batch_size, num_steps, hidden_size, keep_prob')
+
+    generate_config = Config(batch_size= 1,
+                          num_steps = 1,
+                          hidden_size = hidden_size,
+                          keep_prob = 1)
+
     prev_x = np.zeros((1, 1, 3), dtype=np.float32)
     prev_x[0, 0, 2] = 1 # initially, we want to see beginning of new stroke
-    prev_state = sess.run(self.cell.zero_state(1, tf.float32))
+
+    # this is a list of three zero state cells with the correct dimensionality
+    prev_states = model.initial_state 
+
+    strokes = np.zeros((duration, 3), dtype=np.float32)
+
+    for i in range(duration):
+        for level in range(len(prev_states)):
+            feed = {model.}
 
 ######################################################################
 # plot input vs predictions
@@ -603,7 +617,26 @@ def main():
         query_models = []
         for i in range(2,len(query_data)):
             with tf.name_scope('gif_query'+str(i)):
-                query_input = Input(query_data[0:i,:], query_seq[0:i,:], query_config)
+                seg_query_data = query_data[0:i,:]
+                seg_query_seq = query_seq[0:i,:]
+
+                int_seg_query_data = integrate(seg_query_data, seg_query_seq)
+
+                last_point = int_seg_query_data[-1]
+                xmin, xmax = (int_seg_query_data[:,0]-last_point[0]).min()-10, (int_seg_query_data[:,0]-last_point[0]).max()+10
+                ymin, ymax = ((int_seg_query_data[:,1]-last_point[1]).min()-10), ((int_seg_query_data[:,1]-last_point[1]).max()+10)
+
+                xrng = np.linspace(xmin, xmax, 200, True)
+                yrng = np.linspace(ymin, ymax, 200, True)
+
+                xg, yg = np.meshgrid(xrng, yrng)
+
+                xreshape, yreshape = xg.reshape(-1,1), yg.reshape(-1,1)
+                third_col = np.ones(xreshape.shape)
+
+                mesh_target = np.hstack([xreshape, yreshape, third_col])
+
+                query_input = Input(seg_query_data, seg_query_seq, query_config)
                 with tf.variable_scope('model', reuse=True, initializer=initializer):
                     query_models.append(LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target))
 
