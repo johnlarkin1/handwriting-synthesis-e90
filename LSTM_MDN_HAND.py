@@ -635,6 +635,7 @@ def main():
                 third_col = np.ones(xreshape.shape)
 
                 mesh_target = np.hstack([xreshape, yreshape, third_col])
+                mesh_target = mesh_target.reshape(-1, 1, 3).astype('float32')
 
                 query_input = Input(seg_query_data, seg_query_seq, query_config)
                 with tf.variable_scope('model', reuse=True, initializer=initializer):
