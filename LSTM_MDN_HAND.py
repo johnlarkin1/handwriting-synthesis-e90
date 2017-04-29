@@ -633,7 +633,7 @@ def main():
         make_heat_plot('Model {}'.format(0), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
 
         if CREATE_GIFS:
-            for model in query_models:
+            for idx, model in enumerate(query_models):
                 int_query_data = integrate(model.model_input.posdata, model.model_input.seqinfo)
                 last_point = int_query_data[-1]
                 xmin, xmax = (int_query_data[:,0]-last_point[0]).min()-10, (int_query_data[:,0]-last_point[0]).max()+10
