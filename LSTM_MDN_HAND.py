@@ -118,7 +118,7 @@ class Input(object):
 
         batch_size = config.batch_size
         num_steps = config.num_steps
-        self.data = posdata
+        self.posdata = posdata
         self.seqinfo = seqinfo
 
         # I think we need this name scope to make sure that each
