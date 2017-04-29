@@ -58,10 +58,10 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = True
+GENERATE_HANDWRITING = False
 
 ######################################################################
 # Helper function for below
@@ -655,6 +655,7 @@ def main():
                 make_heat_plot_no_integrate('Model {}'.format(idx), l, model.model_input.posdata, xrng, yrng, xg, pred, idx)
 
         if GENERATE_HANDWRITING:
+            pass
 
 
 
