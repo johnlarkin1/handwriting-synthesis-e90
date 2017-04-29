@@ -58,10 +58,10 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = True
+GENERATE_HANDWRITING = False
 
 ######################################################################
 # Helper function for below
@@ -438,7 +438,7 @@ def generate_writing(session, model, duration=800):
 
     for i in range(duration):
         for level in range(len(prev_states)):
-            feed = {model.}
+            feed = {}
 
 ######################################################################
 # plot input vs predictions
