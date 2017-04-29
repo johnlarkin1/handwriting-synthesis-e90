@@ -519,7 +519,7 @@ def make_heat_plot_no_integrate(epoch, loss, query_data, xrng, yrng, xg, pred, i
     ax.yaxis.set_visible(False)
     # plt.show()
     plt.title(titlestr)
-    plt.savefig('LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
+    plt.savefig('NewGifs/LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
 
 ######################################################################
 # main function
@@ -686,12 +686,12 @@ def main():
                 xrng = np.linspace(xmin, xmax, 200, True)
                 yrng = np.linspace(ymin, ymax, 200, True)
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
-                make_heat_plot_no_integrate('Model {}'.format(idx), l, model.model_input.posdata, xrng, yrng, xg, pred, idx)
+                make_heat_plot_no_integrate('Model {}'.format(idx), l, int_query_data, xrng, yrng, xg, pred, idx)
 
+        # MATT: can you help here?
         if GENERATE_HANDWRITING:
-            pass
-
-
+            # not sure what model we should pass in
+            generate_writing(session, query_model, duration = 800)
 
     else:
 
