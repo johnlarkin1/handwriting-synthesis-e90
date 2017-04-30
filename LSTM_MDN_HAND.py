@@ -64,8 +64,6 @@ CREATE_GIFS = False
 # do we want to generate handwriting 
 GENERATE_HANDWRITING = True
 
-TESTING = True
-
 ######################################################################
 # Helper function for below
 
@@ -691,12 +689,6 @@ def main():
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
-    # if this is true then we want to load in our model and just query right away
-    if TESTING:
-        session.run(tf.global_variables_initializer())
-        strokes = generate_writing(session, initializer)
-        sys.exit(0)
-
     if len(sys.argv) > 1:
 
         saver.restore(session, sys.argv[1])
@@ -724,7 +716,7 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            strokes = generate_writing(session, duration = 800)
+            strokes = generate_writing(session, initializer)
 
     else:
 
