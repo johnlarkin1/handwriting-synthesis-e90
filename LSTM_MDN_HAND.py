@@ -11,6 +11,7 @@ import os
 
 from MDNClass import MDN
 from DataLoader import DataLoader
+from gmm_sample import *
 
 # Choose 1 or 2 for different ydata graphs
 PLOT = 1
@@ -58,10 +59,12 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = True
+CREATE_GIFS = False
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = False
+GENERATE_HANDWRITING = True
+
+TESTING = True
 
 ######################################################################
 # Helper function for below
@@ -207,7 +210,7 @@ class LSTMCascade(object):
         lstm_stack = []
 
         # this will hold all of our states as it goes
-        state_stack = []
+        self.state_stack = []
 
         # this will hold the initial states
         init_state_stack = []
@@ -235,9 +238,9 @@ class LSTMCascade(object):
 
             lstm_stack.append(lstm_cell)
             init_state_stack.append(initial_state)
-            state_stack.append(initial_state)
+            self.state_stack.append(initial_state)
 
-        # cash our initial states
+        # cache our initial states
         self.initial_state = init_state_stack
 
         # Need an empty total output list of ys
@@ -268,7 +271,7 @@ class LSTMCascade(object):
                         # Run the lstm cell using the current timestep of
                         # input and the previous state to get the output and the new state
                         curr_lstm_cell = lstm_stack[i]
-                        curr_state = state_stack[i]
+                        curr_state = self.state_stack[i]
 
 
                         # state.c and state.h are both shape (batch_size, hidden_size)
@@ -288,7 +291,7 @@ class LSTMCascade(object):
                                              possible_state)
 
                         # Update our state list
-                        state_stack[i] = curr_state
+                        self.state_stack[i] = curr_state
 
                         # Update the output for the single cell
                         time_step_output.append(cell_output)
@@ -300,7 +303,7 @@ class LSTMCascade(object):
         # we need to bookmark the final state to preserve continuity
         # across batches when we run an epoch (see below)
         # note, this is a list
-        self.final_state = state_stack
+        self.final_state = self.state_stack
 
         # concatenate all the outputs together into a big rank-2
         # matrix where each row is of dimension hidden_size
@@ -417,9 +420,36 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
+    def sample(self, session, duration=1200):
+        
+        # first stroke
+        prev_x = np.zeros((1,1,3), dtype=np.float32)
+        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
+
+        # this will hold all the info
+        strokes = np.zeros((duration,3), dtype=np.float32)
+
+        # this is a list of three states
+        prev_state = session.run(self.initial_state)
+        samples = []
+
+        fetches = [self.ourMDN.pis, self.ourMDN.corr, self.ourMDN.mu, self.ourMDN.sigma, self.ourMDN.eos, self.final_state]
+        for i in range(duration):
+            for level in range(len(prev_state)):
+                c, h = self.initial_state[level]
+                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+
+            sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
+            samples.append(sample)
+
+            print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
+                
+
+
 ######################################################################
 # generate handwriting function
-def generate_writing(session, model, duration=800):
+def generate_writing(session, initializer):
     # configs are just named tuples
     Config = namedtuple('Config', 'batch_size, num_steps, hidden_size, keep_prob')
 
@@ -428,17 +458,15 @@ def generate_writing(session, model, duration=800):
                           hidden_size = hidden_size,
                           keep_prob = 1)
 
-    prev_x = np.zeros((1, 1, 3), dtype=np.float32)
-    prev_x[0, 0, 2] = 1 # initially, we want to see beginning of new stroke
+    prev_x = np.zeros((2,1,3), dtype = np.float32)
+    generate_data, generate_data = get_data(prev_x)
 
-    # this is a list of three zero state cells with the correct dimensionality
-    prev_states = model.initial_state 
+    with tf.name_scope('generate'):
+        generate_input = Input(generate_data, generate_data, generate_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            generate_model = LSTMCascade(generate_config, generate_input, is_train=False)
 
-    strokes = np.zeros((duration, 3), dtype=np.float32)
-
-    for i in range(duration):
-        for level in range(len(prev_states)):
-            feed = {}
+    strokes = generate_model.sample(session, duration=800)
 
 ######################################################################
 # plot input vs predictions
@@ -586,8 +614,8 @@ def main():
 
     mesh_target = np.hstack([xreshape, yreshape, third_col])
     mesh_target = mesh_target.reshape(-1, 1, 3).astype('float32')
-    pt = np.zeros(xg.shape)
-    make_heat_plot(4,4, query_data, query_seq, xrng, yrng, xg, pt, 777)
+    # pt = np.zeros(xg.shape)
+    # make_heat_plot(4,4, query_data, query_seq, xrng, yrng, xg, pt, 777)
     # # generate visualization data 
     # query_data = train_data[0:40,:]
 
@@ -664,6 +692,11 @@ def main():
     tf.train.start_queue_runners(session)
 
     # if this is true then we want to load in our model and just query right away
+    if TESTING:
+        session.run(tf.global_variables_initializer())
+        strokes = generate_writing(session, initializer)
+        sys.exit(0)
+
     if len(sys.argv) > 1:
 
         saver.restore(session, sys.argv[1])
@@ -673,8 +706,8 @@ def main():
         tvars = tf.global_variables()
         print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
 
-        l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('Model {}'.format(0), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
+        # l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
+        # make_heat_plot('Model {}'.format(0), l, query_data, query_seq, xrng, yrng, xg, pred, 1000)
 
         if CREATE_GIFS:
             for idx, model in enumerate(query_models):
@@ -691,7 +724,7 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            generate_writing(session, query_model, duration = 800)
+            strokes = generate_writing(session, duration = 800)
 
     else:
 
