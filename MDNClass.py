@@ -47,12 +47,14 @@ class MDN:
 		p = tf.add(tf.matmul(x, w_pi),b_pi)
 		pis = tf.exp(p)
 		pis = pis/tf.reshape(tf.reduce_sum(pis, axis=1), [-1, 1]) # Shape (?, number of components) = (?, 3)	
+		self.pis = pis
 
 		# Setting up the correlations
 		w_corr = tf.get_variable(name = 'w_corr', initializer = tf.random_normal([final_dimension_from_lstm, self.NCOMPONENTS], stddev = 0.2, dtype = d_type))
 		b_corr = tf.get_variable(name = 'b_corr', initializer = tf.random_normal([self.NCOMPONENTS], stddev = 0.2, dtype = d_type))
 		precorr = tf.add(tf.matmul(x,w_corr), b_corr)
 		corr = tf.tanh(precorr) # Shape (?, number of components) = (?, 3)
+		self.corr = corr
 
 		# Setting up the means
 		# Changed!!: 
@@ -61,6 +63,7 @@ class MDN:
 
 		# no activation function for the mus 
 		mu = tf.add(tf.matmul(x,w_mu),b_mu) # Shape (?, number of comp * number of dimensions) = (?, 6)
+		self.mu = mu
 
 		# Setting up sigma and variance
 		# Changed!!:
@@ -68,6 +71,7 @@ class MDN:
 		b_sigma = tf.get_variable(name = 'b_sigma', initializer = tf.random_normal([self.NCOMPONENTS*self.ndim], dtype = d_type))
 		sigma = tf.add(tf.matmul(x,w_sigma),b_sigma)
 		sigma = tf.exp(sigma) # Shape (?, number of comp * number of dimensions) = (?, 6)
+		self.sigma = sigma
 
 		# end of stroke parameter
 		eos = tf.get_variable(name = 'eos', initializer = tf.random_normal([1], dtype = d_type))
@@ -78,7 +82,6 @@ class MDN:
 		sum_of_pis = tf.reduce_sum(pis)
 
 		# Target values
-		print('targets shape: {}'.format(targets))
 		xy_targets = tf.slice(targets, [0, 0], [-1, 2])
 		eos_targets = tf.slice(targets, [0, 2], [-1, 1])
 		self.actual = actual = tf.reshape(xy_targets, [-1, 1, self.ndim])
