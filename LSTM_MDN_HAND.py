@@ -179,7 +179,7 @@ class Input(object):
 # Class of Cascading LSTMs 
 class LSTMCascade(object):
 
-    def __init__(self, config, model_input, is_train, external_targets=None):
+    def __init__(self, config, model_input, is_train, is_sample=False, external_targets=None):
 
         # Stash some variables from config
         hidden_size = config.hidden_size
@@ -194,7 +194,9 @@ class LSTMCascade(object):
         # Stash input
         self.model_input = model_input
 
-        # we don't need to reshape the data! 
+        # we don't need to reshape the data!
+        if is_sample:
+            self.lstm_input = tf.placeholder(tf.float32, shape=[None]) 
         self.lstm_input = model_input.x
 
         # this is going to be the final dimension 
@@ -434,12 +436,17 @@ class LSTMCascade(object):
         fetches = [self.ourMDN.pis, self.ourMDN.corr, self.ourMDN.mu, self.ourMDN.sigma, self.ourMDN.eos, self.final_state]
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
+            self.lstm_input = prev_x
             for level in range(len(prev_state)):
+
                 print('  At level: {}'.format(i))
                 c, h = self.initial_state[level]
+                print(c,h)
                 print('Feeding in...')
-                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+
+                feed_dict = {c: prev_state[level].c, h: prev_state[level].h }
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
             sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
