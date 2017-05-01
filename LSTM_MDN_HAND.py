@@ -447,6 +447,8 @@ class LSTMCascade(object):
 
                 feed_dict = {c: prev_state[level].c, h: prev_state[level].h }
                 print('Running the session now:')
+                print('fetches: {}'.format(fetches))
+                print('feed dict: {}'.format(feed_dict))
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
