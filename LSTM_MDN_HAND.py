@@ -439,16 +439,19 @@ class LSTMCascade(object):
                 feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
+
+
             sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
             print(sample.shape)
             samples.append(sample)
+            prev_x = sample
 
             print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
             prev_x = sample
+            prev_state = next_state
         return samples
                 
-
 
 ######################################################################
 # generate handwriting function
@@ -698,7 +701,7 @@ def main():
 
         saver.restore(session, sys.argv[1])
 
-        print('did a restore. here are all the variables:')
+        print('Did a restore. Here are all the variables:')
         
         tvars = tf.global_variables()
         print('\n'.join(['  - ' + tvar.name for tvar in tvars]))
@@ -722,6 +725,7 @@ def main():
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
             strokes = generate_writing(session, initializer)
+            plt.plot(strokes[:,0], strokes[:,1])
 
     else:
 
