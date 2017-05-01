@@ -450,6 +450,7 @@ class LSTMCascade(object):
 
             prev_x = sample
             prev_state = next_state
+
         return samples
                 
 
