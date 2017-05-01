@@ -437,6 +437,7 @@ class LSTMCascade(object):
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
             self.lstm_input = prev_x
+
             for level in range(len(prev_state)):
 
                 print('  At level: {}'.format(i))
@@ -445,6 +446,7 @@ class LSTMCascade(object):
                 print('Feeding in...')
 
                 feed_dict = {c: prev_state[level].c, h: prev_state[level].h }
+                print('Running the session now:')
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
