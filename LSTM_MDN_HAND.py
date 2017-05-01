@@ -316,7 +316,7 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             ourMDN = MDN(lstm_output_rank2, targets_rank2, final_high_dimension, is_train)
-            self.pis, self.corr, self.mu, self.sigma, self.self.eos = ourMDN.return_params()
+            self.pis, self.corr, self.mu, self.sigma, self.eos = ourMDN.return_params()
 
         # The loss is now calculated from our MDN
         MDNloss, log_loss = ourMDN.compute_loss()
