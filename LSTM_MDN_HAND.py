@@ -194,8 +194,12 @@ class LSTMCascade(object):
         # Stash input
         self.model_input = model_input
 
-        # we don't need to reshape the data! 
-        self.lstm_input = model_input.x
+        # we don't need to reshape the data!
+        if is_sample:
+            self.lstm_input = tf.placeholder(tf.float32, shape = [1,1,3])
+            model_input.y = tf.zeros(shape=[1,1,3])
+        else:
+            self.lstm_input = model_input.x
 
         # this is going to be the final dimension 
         # this is always even
@@ -432,7 +436,8 @@ class LSTMCascade(object):
         samples = []
 
         # fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
-        fetches = self.pis
+        # fetches = self.pis
+        fetches = self.loss
 
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
@@ -445,11 +450,11 @@ class LSTMCascade(object):
                 print(c,h)
                 print('Feeding in...')
 
-                feed_dict = {c: prev_state[level].c, h: prev_state[level].h }
+                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                 print('Running the session now:')
                 print('fetches: {}'.format(fetches))
                 print('feed dict: {}'.format(feed_dict))
-                pis = session.run(fetches, feed_dict)
+                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
@@ -483,7 +488,7 @@ def generate_writing(session, initializer):
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_data, generate_config)
         with tf.variable_scope('model', reuse=True, initializer=initializer):
-            generate_model = LSTMCascade(generate_config, generate_input, is_train=False)
+            generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
 
     strokes = generate_model.sample(session, duration=800)
 
@@ -612,7 +617,6 @@ def main():
     query_data, query_seq = get_data(our_query_data)
     query_data, query_seq = query_data[0:178, :], query_seq[0:178,:]
 
-    # TODO: perfect visualization
     # Let's get our mesh grid for visualization
     int_query_data = integrate(query_data, query_seq)
     # int_query_y = query_seq[:,1] * 6
@@ -633,10 +637,6 @@ def main():
 
     mesh_target = np.hstack([xreshape, yreshape, third_col])
     mesh_target = mesh_target.reshape(-1, 1, 3).astype('float32')
-    # pt = np.zeros(xg.shape)
-    # make_heat_plot(4,4, query_data, query_seq, xrng, yrng, xg, pt, 777)
-    # # generate visualization data 
-    # query_data = train_data[0:40,:]
 
     # generate input producers and models -- again, not 100% sure why
     # we do the name_scope here...
@@ -710,6 +710,13 @@ def main():
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
+    session.run(tf.global_variables_initializer())
+
+    if GENERATE_HANDWRITING:
+        points = generate_writing(session, initializer)
+        plt.plot(points[:,0], points[:,1])
+        sys.exit(0)
+
     if len(sys.argv) > 1:
 
         saver.restore(session, sys.argv[1])
@@ -737,8 +744,8 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            strokes = generate_writing(session, initializer)
-            plt.plot(strokes[:,0], strokes[:,1])
+            points = generate_writing(session, initializer)
+            plt.plot(points[:,0], points[:,1])
 
     else:
 
