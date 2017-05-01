@@ -435,11 +435,12 @@ class LSTMCascade(object):
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
             for level in range(len(prev_state)):
+                print('  At level: {}'.format(i))
                 c, h = self.initial_state[level]
+                print('Feeding in...')
                 feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-
-
+                print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
             sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
             print(sample.shape)
