@@ -431,7 +431,9 @@ class LSTMCascade(object):
         prev_state = session.run(self.initial_state)
         samples = []
 
-        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+        # fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+        fetches = self.pis
+
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
             self.lstm_input = prev_x
@@ -447,7 +449,7 @@ class LSTMCascade(object):
                 print('Running the session now:')
                 print('fetches: {}'.format(fetches))
                 print('feed dict: {}'.format(feed_dict))
-                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                pis = session.run(fetches, feed_dict)
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
