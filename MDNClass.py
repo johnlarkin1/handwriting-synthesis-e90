@@ -155,6 +155,6 @@ class MDN:
 		return self.mixture_prob
 
 	def return_params(self):
-		return self.pis, self.corr, self.mu, self.self.eos
+		return self.pis, self.corr, self.mu, self.sigma, self.eos
 
 
