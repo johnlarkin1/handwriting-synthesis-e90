@@ -194,9 +194,7 @@ class LSTMCascade(object):
         # Stash input
         self.model_input = model_input
 
-        # we don't need to reshape the data!
-        if is_sample:
-            self.lstm_input = tf.placeholder(tf.float32, shape=[None]) 
+        # we don't need to reshape the data! 
         self.lstm_input = model_input.x
 
         # this is going to be the final dimension 
@@ -318,7 +316,7 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             ourMDN = MDN(lstm_output_rank2, targets_rank2, final_high_dimension, is_train)
-            self.ourMDN = ourMDN
+            self.pis, self.corr, self.mu, self.sigma, self.self.eos = ourMDN.return_params()
 
         # The loss is now calculated from our MDN
         MDNloss, log_loss = ourMDN.compute_loss()
@@ -433,7 +431,7 @@ class LSTMCascade(object):
         prev_state = session.run(self.initial_state)
         samples = []
 
-        fetches = [self.ourMDN.pis, self.ourMDN.corr, self.ourMDN.mu, self.ourMDN.sigma, self.ourMDN.eos, self.final_state]
+        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
             self.lstm_input = prev_x
