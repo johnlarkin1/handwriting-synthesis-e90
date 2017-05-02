@@ -196,7 +196,7 @@ class LSTMCascade(object):
 
         # we don't need to reshape the data!
         if is_sample:
-            self.lstm_input = tf.placeholder(tf.float32, shape = [1,1,3])
+            self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
         else:
             self.lstm_input = model_input.x
@@ -429,7 +429,7 @@ class LSTMCascade(object):
             prev_x = np.zeros((1,1,3), dtype=np.float32)
             prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
         else:
-            prev_x = data
+            prev_x = data.reshape(-1,1,3)
 
         # this will hold all the info
         writing = np.zeros((duration,3), dtype=np.float32)
@@ -644,8 +644,6 @@ def main():
     prev_x = np.zeros((2,1,3), dtype = np.float32)
     prev_x = query_data[0:10,:]
     generate_data, generate_seq = get_data(prev_x)
-
-    prev_x
 
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_seq, generate_config)
