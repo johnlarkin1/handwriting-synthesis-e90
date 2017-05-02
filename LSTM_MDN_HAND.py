@@ -422,11 +422,14 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=400):
+    def sample(self, session, data=None, duration=400):
         
         # first stroke
-        prev_x = np.zeros((1,1,3), dtype=np.float32)
-        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
+        if data is None:
+            prev_x = np.zeros((1,1,3), dtype=np.float32)
+            prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
+        else:
+            prev_x = data
 
         # this will hold all the info
         writing = np.zeros((duration,3), dtype=np.float32)
@@ -717,7 +720,7 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            strokes = generate_model.sample(session)
+            strokes = generate_model.sample(session, data=query_data[0:10,:])
             seq = np.ones(shape = (strokes.shape[0], 1))
             seq[0,0] = 0
             make_handwriting_plot(strokes, seq)
