@@ -710,10 +710,9 @@ def main():
         with tf.name_scope('generate'):
             generate_input = Input(generate_data, generate_seq, generate_config)
             with tf.variable_scope('model', reuse=True, initializer=initializer):
-                generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
+                generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
 
-        points = generate_model.sample(session)
-        plt.plot(points[:,0], points[:,1])
+        generate_model.run_epoch(session)
         sys.exit(0)
 
     if len(sys.argv) > 1:
