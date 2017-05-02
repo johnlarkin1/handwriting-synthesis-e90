@@ -639,8 +639,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:1]
-    our_valid_data = data.valid_data[0:1]
+    our_train_data = data.data[0:10]
+    our_valid_data = data.valid_data[0:10]
     our_query_data = data.valid_data[304:306]
 
     # generate our train data
