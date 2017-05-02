@@ -35,7 +35,7 @@ train_keep_prob = 0.80
 num_epochs = 1000
 
 # how often to print/plot
-update_every = 1
+update_every = 500
 
 # how often to save
 save_every = 10 
@@ -749,7 +749,7 @@ def main():
                 print('validation loss at epoch {} is {:.2f}'.format(epoch, l))
 
                 l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-                make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
+                # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
 
                 if not os.path.isdir('models'):
                     os.mkdir('models')
