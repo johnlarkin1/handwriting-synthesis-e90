@@ -458,9 +458,9 @@ class LSTMCascade(object):
 
             sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
             print('sample: {}'.format(sample))
-            print('sample.shape : {}'.format(sample))
+            print('sample.shape : {}'.format(sample.shape))
             writing[i, :] = sample
-            prev_x = sample
+            prev_x = sample.reshape(-1,1,3)
             prev_state = next_state
 
         return writing
