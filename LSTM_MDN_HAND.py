@@ -472,14 +472,7 @@ class LSTMCascade(object):
                 #print(vals)
 
                 # get the final LSTM state for the next iteration
-                state = vals['final_state']
-
-            # stash output if necessary
-            if return_predictions:
-                all_outputs.append(vals['p'])
-
-            # update total loss
-            total_loss += vals['loss']
+                state = vals
 
 
         # for i in range(duration):
