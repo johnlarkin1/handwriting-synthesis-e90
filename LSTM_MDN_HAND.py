@@ -447,11 +447,11 @@ class LSTMCascade(object):
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
             sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
-            print('sample: {}'.format(sample))
+            # print('sample: {}'.format(sample))
             print('sample.shape : {}'.format(sample.shape))
             writing[i, :] = sample
             prev_x = sample.reshape(-1,1,3)
-            print(next_state)
+            print(next_state) 
             prev_state = next_state
 
         return writing
@@ -582,8 +582,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:200]
-    our_valid_data = data.valid_data[0:200]
+    our_train_data = data.data[0:1000]
+    our_valid_data = data.valid_data[0:1000]
     our_query_data = data.valid_data[304:306]
 
     # generate our train data
@@ -722,7 +722,7 @@ def main():
             seq = np.ones(shape = (strokes.shape[0], 1))
             seq[0,0] = 0
             make_handwriting_plot(strokes, seq)
-            print('Handwriitng generated.')
+            print('Handwriting generated.')
 
 
     else:
