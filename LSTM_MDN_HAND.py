@@ -526,6 +526,7 @@ def generate_writing(session, initializer):
 
     prev_x = np.zeros((2,1,3), dtype = np.float32)
     generate_data, generate_data = get_data(prev_x)
+    print(np.size(generate_data))
 
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_data, generate_config)
