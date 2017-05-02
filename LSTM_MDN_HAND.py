@@ -446,9 +446,6 @@ class LSTMCascade(object):
         #    'after tf.max div': self.after_max_division,
         # }
 
-        # run the initial state to feed the LSTM - this should just be
-        # zeros
-
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
 
@@ -585,7 +582,7 @@ def main():
                           hidden_size = hidden_size,
                           keep_prob = 1)
 
-    sample_config = Config(batch_size = 1,
+    generate_config = Config(batch_size = 1,
                            num_steps = 1,
                            hidden_size = hidden_size,
                            keep_prob = 1)
