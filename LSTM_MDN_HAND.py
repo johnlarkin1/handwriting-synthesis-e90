@@ -62,7 +62,7 @@ learning_rate = 1e-4
 CREATE_GIFS = False
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = True
+GENERATE_HANDWRITING = False
 
 ######################################################################
 # Helper function for below
@@ -700,10 +700,8 @@ def main():
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
-    session.run(tf.global_variables_initializer())
-
     if GENERATE_HANDWRITING:
-
+        session.run(tf.global_variables_initializer())
         prev_x = np.zeros((2,1,3), dtype = np.float32)
         generate_data, generate_seq = get_data(prev_x)
 
