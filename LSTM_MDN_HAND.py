@@ -422,7 +422,7 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=800):
+    def sample(self, session, duration=600):
         
         # first stroke
         prev_x = np.zeros((1,1,3), dtype=np.float32)
@@ -451,6 +451,7 @@ class LSTMCascade(object):
             print('sample.shape : {}'.format(sample.shape))
             writing[i, :] = sample
             prev_x = sample.reshape(-1,1,3)
+            print(next_state)
             prev_state = next_state
 
         return writing
