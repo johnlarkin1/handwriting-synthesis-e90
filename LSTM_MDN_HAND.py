@@ -434,9 +434,9 @@ class LSTMCascade(object):
         # this is a list of three states
         prev_state = session.run(self.initial_state)
 
-        # fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
         # fetches = self.pis
-        fetches = self.loss
+        # fetches = self.loss
         # fetches = {
         #     'loss': self.loss,
         #     'pis': self.pis,
@@ -460,7 +460,7 @@ class LSTMCascade(object):
                 print('Running the session now:')
                 print('fetches: {}'.format(fetches))
                 print('feed dict: {}'.format(feed_dict))
-                loss = session.run(fetches, feed_dict)
+                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
@@ -701,7 +701,7 @@ def main():
     tf.train.start_queue_runners(session)
 
     if GENERATE_HANDWRITING:
-        session.run(tf.global_variables_initializer())
+        
         prev_x = np.zeros((2,1,3), dtype = np.float32)
         generate_data, generate_seq = get_data(prev_x)
 
@@ -710,7 +710,9 @@ def main():
             with tf.variable_scope('model', reuse=True, initializer=initializer):
                 generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
 
-        generate_model.run_epoch(session)
+        session.run(tf.global_variables_initializer())
+
+        strokes = generate_model.sample(session)
         sys.exit(0)
 
     if len(sys.argv) > 1:
