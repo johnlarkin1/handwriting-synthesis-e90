@@ -422,7 +422,7 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=800):
+    def sample(self, session, duration=400):
         
         # first stroke
         prev_x = np.zeros((1,1,3), dtype=np.float32)
@@ -581,8 +581,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:10]
-    our_valid_data = data.valid_data[0:10]
+    our_train_data = data.data[0:200]
+    our_valid_data = data.valid_data[0:200]
     our_query_data = data.valid_data[304:306]
 
     # generate our train data
@@ -683,12 +683,6 @@ def main():
     session = tf.Session()
 
     # # let's save our computation graph IF we don't already have a parameter
-    # if len(sys.argv) > 1:
-    #     saver = tf.train.import_meta_graph('LSTM-MDN-model.meta')
-    #     saver.restore(session, tf.train.latest_checkpoint('./'))
-    # else:
-    #     saver = tf.train.Saver()
-
     saver = tf.train.Saver()
     
     # need to explicitly start the queue runners so the index variable
