@@ -438,37 +438,79 @@ class LSTMCascade(object):
         # fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
         # fetches = self.pis
         fetches = self.loss
+        # fetches = {
+        #     'loss': self.loss,
+        #     'pis': self.pis,
+        #     'log loss' : self.log_loss,
+        #    'loss before max': self.loss_before_max,
+        #     'err wt reduce sum': self.err_wt_reduce_sum,
+        #    'after tf.max div': self.after_max_division,
+        # }
 
-        for i in range(duration):
-            print('At sample iteration: {}'.format(i))
-            self.lstm_input = prev_x
+        # run the initial state to feed the LSTM - this should just be
+        # zeros
+        state = session.run(self.initial_state)
 
-            for level in range(len(prev_state)):
+        # we will sum up the total loss
+        total_loss = 0.0
 
-                print('  At level: {}'.format(i))
+        all_outputs = []
+
+        ##################################################
+        # for each batch:
+        
+        for step in range(self.model_input.epoch_size):
+
+            for level in range(len(state)):
+                # the input producer will take care of feeding in x/y,
+                # but we need to feed in the LSTM state
                 c, h = self.initial_state[level]
-                print(c,h)
-                print('Feeding in...')
+                feed_dict = { c: state[level].c, h: state[level].h }
 
-                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
-                print('Running the session now:')
-                print('fetches: {}'.format(fetches))
-                print('feed dict: {}'.format(feed_dict))
-                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                # run the computation graph?
+                vals = session.run(fetches, feed_dict)
+                #print(vals)
 
-                print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
+                # get the final LSTM state for the next iteration
+                state = vals['final_state']
 
-            sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
-            print(sample.shape)
-            samples.append(sample)
-            prev_x = sample
+            # stash output if necessary
+            if return_predictions:
+                all_outputs.append(vals['p'])
 
-            print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
+            # update total loss
+            total_loss += vals['loss']
 
-            prev_x = sample
-            prev_state = next_state
 
-        return samples
+        # for i in range(duration):
+        #     print('At sample iteration: {}'.format(i))
+
+        #     for level in range(len(prev_state)):
+
+        #         print('  At level: {}'.format(i))
+        #         c, h = self.initial_state[level]
+        #         print(c,h)
+        #         print('Feeding in...')
+
+        #         feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+        #         print('Running the session now:')
+        #         print('fetches: {}'.format(fetches))
+        #         print('feed dict: {}'.format(feed_dict))
+        #         loss = session.run(fetches, feed_dict)
+
+        #         print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
+
+        #     sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
+        #     print(sample.shape)
+        #     samples.append(sample)
+        #     prev_x = sample
+
+        #     print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
+
+        #     prev_x = sample
+        #     prev_state = next_state
+
+        return 7
                 
 
 ######################################################################
@@ -603,8 +645,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:100]
-    our_valid_data = data.valid_data[0:100]
+    our_train_data = data.data[0:1]
+    our_valid_data = data.valid_data[0:1]
     our_query_data = data.valid_data[304:306]
 
     # generate our train data
