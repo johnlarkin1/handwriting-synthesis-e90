@@ -506,6 +506,15 @@ def make_plot(epoch, loss, data, seq, pred):
     plt.title(titlestr)
     plt.savefig('test_data_pred_lstm_3.pdf')
 
+def make_handwriting_plot(generated_data, generated_seq):
+    titlestr = 'Generated Handwriting'
+    if do_diff:
+        data = integrate(generated_data, generated_seq)
+    plt.clf()
+    plt.plot(data[:,0], data[:,1], 'r.')
+    plt.axis('equal')
+    plt.title(titlestr)
+    plt.savefig('GeneratedHW.pdf')
 
 def make_heat_plot(epoch, loss, query_data, seq, xrng, yrng, xg, pred, i):
     p = pred.reshape(xg.shape)
@@ -725,8 +734,11 @@ def main():
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
             strokes = generate_model.sample(session)
-            print('STROKES:', strokes)
-            sys.exit(0)
+            seq = np.ones(shape = (strokes.shape[0], 1))
+            seq[0,0] = 0
+            make_handwriting_plot(strokes, seq)
+            print('Handwriitng generated.')
+
 
     else:
 
