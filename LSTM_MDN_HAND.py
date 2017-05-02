@@ -196,7 +196,7 @@ class LSTMCascade(object):
 
         # we don't need to reshape the data!
         if is_sample:
-            self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
+            self.lstm_input = tf.placeholder(tf.float32, shape = [1,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
         else:
             self.lstm_input = model_input.x
@@ -422,14 +422,11 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, data=None, duration=400):
+    def sample(self, session, duration=800):
         
         # first stroke
-        if data is None:
-            prev_x = np.zeros((1,1,3), dtype=np.float32)
-            prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
-        else:
-            prev_x = data.reshape(-1,1,3)
+        prev_x = np.zeros((1,1,3), dtype=np.float32)
+        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
 
         # this will hold all the info
         writing = np.zeros((duration,3), dtype=np.float32)
@@ -642,7 +639,6 @@ def main():
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
     
     prev_x = np.zeros((2,1,3), dtype = np.float32)
-    prev_x = query_data[0:10,:]
     generate_data, generate_seq = get_data(prev_x)
 
     with tf.name_scope('generate'):
@@ -721,7 +717,7 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            strokes = generate_model.sample(session, data=query_data[0:10,:])
+            strokes = generate_model.sample(session)
             seq = np.ones(shape = (strokes.shape[0], 1))
             seq[0,0] = 0
             make_handwriting_plot(strokes, seq)
