@@ -697,14 +697,6 @@ def main():
     # Supervisor takes care of it)
     tf.train.start_queue_runners(session)
 
-    if GENERATE_HANDWRITING:
-
-        session.run(tf.global_variables_initializer())
-
-        strokes = generate_model.sample(session)
-        print('STROKES:', strokes)
-        sys.exit(0)
-
     if len(sys.argv) > 1:
 
         saver.restore(session, sys.argv[1])
@@ -732,8 +724,9 @@ def main():
         # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            points = generate_writing(session, initializer)
-            plt.plot(points[:,0], points[:,1])
+            strokes = generate_model.sample(session)
+            print('STROKES:', strokes)
+            sys.exit(0)
 
     else:
 
