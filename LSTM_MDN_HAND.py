@@ -435,16 +435,6 @@ class LSTMCascade(object):
         prev_state = session.run(self.initial_state)
 
         fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
-        # fetches = self.pis
-        # fetches = self.loss
-        # fetches = {
-        #     'loss': self.loss,
-        #     'pis': self.pis,
-        #     'log loss' : self.log_loss,
-        #    'loss before max': self.loss_before_max,
-        #     'err wt reduce sum': self.err_wt_reduce_sum,
-        #    'after tf.max div': self.after_max_division,
-        # }
 
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
@@ -654,7 +644,7 @@ def main():
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_seq, generate_config)
         with tf.variable_scope('model', reuse=True, initializer=initializer):
-            generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
+            generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
     
     if CREATE_GIFS:
         query_models = []
