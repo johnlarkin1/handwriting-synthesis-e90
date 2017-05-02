@@ -464,7 +464,7 @@ class LSTMCascade(object):
 
                 print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
-            sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
+            sample = gmm_sample(mu, sigma, corr, pis, eos)
             print(sample.shape)
             writing[i, :] = sample
             prev_x = sample
