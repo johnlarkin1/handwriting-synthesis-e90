@@ -62,7 +62,7 @@ learning_rate = 1e-4
 CREATE_GIFS = False
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = False
+GENERATE_HANDWRITING = True
 
 ######################################################################
 # Helper function for below
