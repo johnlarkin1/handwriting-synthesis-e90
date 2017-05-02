@@ -649,7 +649,15 @@ def main():
         query_input = Input(query_data, query_seq, query_config)
         with tf.variable_scope('model', reuse=True, initializer=initializer):
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
+    
+    prev_x = np.zeros((2,1,3), dtype = np.float32)
+    generate_data, generate_seq = get_data(prev_x)
 
+    with tf.name_scope('generate'):
+        generate_input = Input(generate_data, generate_seq, generate_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
+    
     if CREATE_GIFS:
         query_models = []
         for i in range(2,len(query_data)):
@@ -701,18 +709,11 @@ def main():
     tf.train.start_queue_runners(session)
 
     if GENERATE_HANDWRITING:
-        
-        prev_x = np.zeros((2,1,3), dtype = np.float32)
-        generate_data, generate_seq = get_data(prev_x)
-
-        with tf.name_scope('generate'):
-            generate_input = Input(generate_data, generate_seq, generate_config)
-            with tf.variable_scope('model', reuse=True, initializer=initializer):
-                generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
 
         session.run(tf.global_variables_initializer())
 
         strokes = generate_model.sample(session)
+        print('STROKES:', strokes)
         sys.exit(0)
 
     if len(sys.argv) > 1:
