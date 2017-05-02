@@ -422,18 +422,17 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=1200):
+    def sample(self, session, duration=800):
         
         # first stroke
         prev_x = np.zeros((1,1,3), dtype=np.float32)
         prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
 
         # this will hold all the info
-        strokes = np.zeros((duration,3), dtype=np.float32)
+        writing = np.zeros((duration,3), dtype=np.float32)
 
         # this is a list of three states
         prev_state = session.run(self.initial_state)
-        samples = []
 
         # fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
         # fetches = self.pis
@@ -449,84 +448,37 @@ class LSTMCascade(object):
 
         # run the initial state to feed the LSTM - this should just be
         # zeros
-        state = session.run(self.initial_state)
 
-        # we will sum up the total loss
-        total_loss = 0.0
+        for i in range(duration):
+            print('At sample iteration: {}'.format(i))
 
-        all_outputs = []
+            for level in range(len(prev_state)):
 
-        ##################################################
-        # for each batch:
-        
-        for step in range(self.model_input.epoch_size):
-
-            for level in range(len(state)):
-                # the input producer will take care of feeding in x/y,
-                # but we need to feed in the LSTM state
+                print('  At level: {}'.format(i))
                 c, h = self.initial_state[level]
-                feed_dict = { c: state[level].c, h: state[level].h }
+                print(c,h)
+                print('Feeding in...')
 
-                # run the computation graph?
-                vals = session.run(fetches, feed_dict)
-                #print(vals)
+                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+                print('Running the session now:')
+                print('fetches: {}'.format(fetches))
+                print('feed dict: {}'.format(feed_dict))
+                loss = session.run(fetches, feed_dict)
 
-                # get the final LSTM state for the next iteration
-                state = vals
+                print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
+            sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
+            print(sample.shape)
+            writing[i, :] = sample
+            prev_x = sample
 
-        # for i in range(duration):
-        #     print('At sample iteration: {}'.format(i))
+            print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
 
-        #     for level in range(len(prev_state)):
+            prev_x = sample
+            prev_state = next_state
 
-        #         print('  At level: {}'.format(i))
-        #         c, h = self.initial_state[level]
-        #         print(c,h)
-        #         print('Feeding in...')
-
-        #         feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
-        #         print('Running the session now:')
-        #         print('fetches: {}'.format(fetches))
-        #         print('feed dict: {}'.format(feed_dict))
-        #         loss = session.run(fetches, feed_dict)
-
-        #         print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
-
-        #     sample = gmm_sample(mu, sigma, corr, pis, eos, next_state)
-        #     print(sample.shape)
-        #     samples.append(sample)
-        #     prev_x = sample
-
-        #     print('pis.shape: {} \n corr.shape: {} \n mu.shape: {} \n sigma.shape: {} eos.shape: {}'.format(pis.shape, corr.shape, mu.shape, sigma.shape, eos.shape))
-
-        #     prev_x = sample
-        #     prev_state = next_state
-
-        return 7
+        return writing
                 
-
-######################################################################
-# generate handwriting function
-def generate_writing(session, initializer):
-    # configs are just named tuples
-    Config = namedtuple('Config', 'batch_size, num_steps, hidden_size, keep_prob')
-
-    generate_config = Config(batch_size= 1,
-                          num_steps = 1,
-                          hidden_size = hidden_size,
-                          keep_prob = 1)
-
-    prev_x = np.zeros((2,1,3), dtype = np.float32)
-    generate_data, generate_data = get_data(prev_x)
-    print(np.size(generate_data))
-
-    with tf.name_scope('generate'):
-        generate_input = Input(generate_data, generate_data, generate_config)
-        with tf.variable_scope('model', reuse=True, initializer=initializer):
-            generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
-
-    strokes = generate_model.sample(session, duration=800)
 
 ######################################################################
 # plot input vs predictions
@@ -632,6 +584,11 @@ def main():
                           num_steps = 1,
                           hidden_size = hidden_size,
                           keep_prob = 1)
+
+    sample_config = Config(batch_size = 1,
+                           num_steps = 1,
+                           hidden_size = hidden_size,
+                           keep_prob = 1)
 
     # range to initialize all weights to
     initializer = tf.random_uniform_initializer(-init_scale, init_scale)
@@ -749,7 +706,16 @@ def main():
     session.run(tf.global_variables_initializer())
 
     if GENERATE_HANDWRITING:
-        points = generate_writing(session, initializer)
+
+        prev_x = np.zeros((2,1,3), dtype = np.float32)
+        generate_data, generate_seq = get_data(prev_x)
+
+        with tf.name_scope('generate'):
+            generate_input = Input(generate_data, generate_seq, generate_config)
+            with tf.variable_scope('model', reuse=True, initializer=initializer):
+                generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
+
+        points = generate_model.sample(session)
         plt.plot(points[:,0], points[:,1])
         sys.exit(0)
 
