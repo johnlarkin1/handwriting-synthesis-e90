@@ -642,7 +642,10 @@ def main():
             query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
     
     prev_x = np.zeros((2,1,3), dtype = np.float32)
+    prev_x = query_data[0:10,:]
     generate_data, generate_seq = get_data(prev_x)
+
+    prev_x
 
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_seq, generate_config)
