@@ -59,10 +59,10 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = True
+GENERATE_HANDWRITING = False
 
 ######################################################################
 # Helper function for below
@@ -325,6 +325,7 @@ class LSTMCascade(object):
         # The loss is now calculated from our MDN
         MDNloss, log_loss = ourMDN.compute_loss()
         self.log_loss = log_loss
+
         if external_targets is None:
             log_loss = tf.reshape(log_loss, [batch_size, num_steps,1])
 
@@ -422,37 +423,62 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=600):
-        
-        # first stroke
-        prev_x = np.zeros((1,1,3), dtype=np.float32)
-        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
+    def sample(self, session, duration=100):
+        CHEAT = False
 
-        # this will hold all the info
-        writing = np.zeros((duration,3), dtype=np.float32)
+        if CHEAT:
+            prev_x = np.zeros((4,1,3), dtype = np.float32)
+            prev_x[0,0,2] = 1
+            prev_x[:,0,0] = 2.5
+            prev_x[:,0,1] = 5.5
+            writing = np.zeros((duration,3), dtype = np.float32)
+            prev_state = session.run(self.initial_state)
+            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+            for i in range(duration):
+                if i < 4:
+                    x_in = prev_x[i].reshape(-1,1,3)
+                else:
+                    x_in = sample.reshape(-1,1,3)
 
-        # this is a list of three states
-        prev_state = session.run(self.initial_state)
+                for level in range(len(prev_state)):
+                    c, h = self.initial_state[level]
 
-        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+                    feed_dict = {self.lstm_input : x_in, c: prev_state[level].c, h: prev_state[level].h }
+                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                print('This is mu: {}'.format(mu))
+                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                writing[i,:] = sample
+                prev_state = next_state
 
-        for i in range(duration):
-            print('At sample iteration: {}'.format(i))
+        else:
+            # first stroke
+            prev_x = np.zeros((1,1,3), dtype=np.float32)
+            prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
 
-            for level in range(len(prev_state)):
+            # this will hold all the info
+            writing = np.zeros((duration,3), dtype=np.float32)
 
-                c, h = self.initial_state[level]
+            # this is a list of three states
+            prev_state = session.run(self.initial_state)
 
-                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
-                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
 
-            sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
-            # print('sample: {}'.format(sample))
-            print('sample.shape : {}'.format(sample.shape))
-            writing[i, :] = sample
-            prev_x = sample.reshape(-1,1,3)
-            print(next_state) 
-            prev_state = next_state
+            for i in range(duration):
+                print('At sample iteration: {}'.format(i))
+
+                for level in range(len(prev_state)):
+
+                    c, h = self.initial_state[level]
+
+                    feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+
+                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                # print('sample: {}'.format(sample))
+                # print('sample.shape : {}'.format(sample.shape))
+                writing[i, :] = sample
+                prev_x = sample.reshape(-1,1,3)
+                prev_state = next_state
 
         return writing
                 
@@ -584,7 +610,7 @@ def main():
 
     our_train_data = data.data[0:1000]
     our_valid_data = data.valid_data[0:1000]
-    our_query_data = data.valid_data[304:306]
+    our_query_data = data.valid_data[225:227]
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
@@ -594,7 +620,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[0:178, :], query_seq[0:178,:]
+    query_data, query_seq = query_data[0:145, :], query_seq[0:145,:]
 
     # Let's get our mesh grid for visualization
     int_query_data = integrate(query_data, query_seq)
@@ -641,6 +667,7 @@ def main():
     
     prev_x = np.zeros((2,1,3), dtype = np.float32)
     generate_data, generate_seq = get_data(prev_x)
+    print('generate seq: {}'.format(generate_seq))
 
     with tf.name_scope('generate'):
         generate_input = Input(generate_data, generate_seq, generate_config)
@@ -715,7 +742,6 @@ def main():
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
                 make_heat_plot_no_integrate('Model {}'.format(idx), l, int_query_data, xrng, yrng, xg, pred, idx)
 
-        # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
             strokes = generate_model.sample(session)
