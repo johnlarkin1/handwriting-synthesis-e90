@@ -750,6 +750,8 @@ def main():
             make_handwriting_plot(strokes, seq)
             print('Handwriting generated.')
 
+        writer = tf.summary.FileWriter("tensorboard_output", session.graph)
+        writer.close()
 
     else:
 
