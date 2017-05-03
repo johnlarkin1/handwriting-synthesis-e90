@@ -17,7 +17,7 @@ class MDN:
 		# The input is now the output of our LSTMs
 		# We will use this as a module in our model
 		self.NHIDDEN = 30 
-		self.NCOMPONENTS = 3 
+		self.NCOMPONENTS = 15
 		self.STEP = final_dimension_from_lstm
 		self.ndim = output_dimension
 		self.data = input_data_from_lstms
@@ -89,8 +89,8 @@ class MDN:
 		# Need to first do some dimensionality manipulation
 		# specifically for mu and sigma
 		# need to reshape with the 3 first, so that our x1 and x2 points get multiplied correctly
-		mu = tf.reshape(mu, [-1, 3, 2])
-		sigma = tf.reshape(sigma, [-1, 3, 2])
+		mu = tf.reshape(mu, [-1, self.NCOMPONENTS, 2])
+		sigma = tf.reshape(sigma, [-1, self.NCOMPONENTS, 2])
 
 		# The output we feed into this function should be that from the hidden layers
 		var = tf.mul(sigma,sigma) # Shape (?, 3, 2)
