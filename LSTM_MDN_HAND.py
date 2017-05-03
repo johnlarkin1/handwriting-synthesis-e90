@@ -20,10 +20,10 @@ PLOT = 1
 d_type = tf.float32
 
 # Batch size for training
-train_batch_size = 5
+train_batch_size = 10
 
 # Number of steps (RNN rollout) for training
-train_num_steps = 200
+train_num_steps = 250
 
 # Dimension of LSTM input/output
 hidden_size = 3
@@ -35,10 +35,10 @@ train_keep_prob = 0.80
 num_epochs = 1000
 
 # how often to print/plot
-update_every = 500
+update_every = 10
 
 # how often to save
-save_every = 10 
+save_every = 1 
 
 # initial weight scaling
 init_scale = 0.1
@@ -769,8 +769,15 @@ def main():
             l = train_model.run_epoch(session)
             print('training loss at epoch {}    is {}'.format(epoch, l))
             if epoch % save_every == 0:
+
                 print('Saving model..... ')
-                saver.save(session, 'LSTM-MDN-model')
+
+                if not os.path.isdir('models'):
+                    os.mkdir('models')
+
+                written_path = saver.save(session, 'models/rnn_demo',
+                          global_step=epoch)
+                print('saved model to {}'.format(written_path))
 
             # see if we should do a printed/graphical update
             if epoch % update_every == 0:
@@ -783,12 +790,12 @@ def main():
                 l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
                 # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
 
-                if not os.path.isdir('models'):
-                    os.mkdir('models')
+                # if not os.path.isdir('models'):
+                #     os.mkdir('models')
 
-                written_path = saver.save(session, 'models/rnn_demo',
-                          global_step=epoch)
-                print('saved model to {}'.format(written_path))
+                # written_path = saver.save(session, 'models/rnn_demo',
+                #           global_step=epoch)
+                # print('saved model to {}'.format(written_path))
 
                 print()
 
