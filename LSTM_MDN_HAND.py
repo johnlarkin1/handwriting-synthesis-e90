@@ -59,10 +59,13 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = True
+CREATE_GIFS = False
 
 # do we want to generate handwriting 
-GENERATE_HANDWRITING = False
+GENERATE_HANDWRITING = True
+
+# do we want to visualize with tensorboard
+CREATE_TENSORBOARD = False
 
 ######################################################################
 # Helper function for below
@@ -750,8 +753,9 @@ def main():
             make_handwriting_plot(strokes, seq)
             print('Handwriting generated.')
 
-        writer = tf.summary.FileWriter("tensorboard_output", session.graph)
-        writer.close()
+        if CREATE_TENSORBOARD:
+            writer = tf.summary.FileWriter("tensorboard_output", session.graph)
+            writer.close()
 
     else:
 
