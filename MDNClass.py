@@ -89,8 +89,8 @@ class MDN:
 		# Need to first do some dimensionality manipulation
 		# specifically for mu and sigma
 		# need to reshape with the 3 first, so that our x1 and x2 points get multiplied correctly
-		mu = tf.reshape(mu, [-1, self.NCOMPONENTS, 2])
-		sigma = tf.reshape(sigma, [-1, self.NCOMPONENTS, 2])
+		mu = tf.reshape(mu, [-1, self.NCOMPONENTS, output_dimension])
+		sigma = tf.reshape(sigma, [-1, self.NCOMPONENTS, output_dimension])
 
 		# The output we feed into this function should be that from the hidden layers
 		var = tf.mul(sigma,sigma) # Shape (?, 3, 2)
@@ -108,7 +108,7 @@ class MDN:
 		#					 for three different components
 
 		# Have to build Z equations first (eqn 25)
-		# Broadcasting works - ? x 2 x 3
+		# Broadcasting works - ? x 3 x 2
 		z12_before = tf.div(tf.mul(dev,dev),var)
 		# shape above: (?, 2, 3)
 		z12 = tf.reduce_sum(z12_before, axis=2)
