@@ -20,10 +20,10 @@ PLOT = 1
 d_type = tf.float32
 
 # Batch size for training
-train_batch_size = 10
+train_batch_size = 30
 
 # Number of steps (RNN rollout) for training
-train_num_steps = 250
+train_num_steps = 300
 
 # Dimension of LSTM input/output
 hidden_size = 3
@@ -32,7 +32,7 @@ hidden_size = 3
 train_keep_prob = 0.80
 
 # number of training epochs
-num_epochs = 1000
+num_epochs = 45
 
 # how often to print/plot
 update_every = 10
@@ -341,6 +341,7 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             self.mixture_prob = ourMDN.return_mixture_prob()
+            self.ncomponents = ourMDN.NCOMPONENTS
 
         # loss is calculated in our MDN
         self.loss = tf.reduce_sum(loss)
@@ -426,7 +427,12 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=100):
+    def sample(self, session, duration=600):
+        def sample_gaussian_2d(mu1, mu2, s1, s2, rho):
+            mean = [mu1, mu2]
+            cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
+            x = np.random.multivariate_normal(mean, cov, 1)
+            return x[0][0], x[0][1]
         CHEAT = False
 
         if CHEAT:
@@ -475,13 +481,16 @@ class LSTMCascade(object):
 
                     feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                    # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
 
-                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+
+                sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
                 # print('sample: {}'.format(sample))
-                # print('sample.shape : {}'.format(sample.shape))
+                print('sample.shape : {}'.format(sample.shape))
                 writing[i, :] = sample
                 prev_x = sample.reshape(-1,1,3)
                 prev_state = next_state
+                # print('next_state: {}'.format(next_state))
 
         return writing
                 
