@@ -199,7 +199,7 @@ class LSTMCascade(object):
 
         # we don't need to reshape the data!
         if is_sample:
-            self.lstm_input = tf.placeholder(tf.float32, shape = [1,1,3])
+            self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
         else:
             self.lstm_input = model_input.x
@@ -488,7 +488,7 @@ class LSTMCascade(object):
                 # print('sample: {}'.format(sample))
                 print('sample.shape : {}'.format(sample.shape))
                 writing[i, :] = sample
-                prev_x = sample.reshape(-1,1,3)
+                prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
                 prev_state = next_state
                 # print('next_state: {}'.format(next_state))
 
