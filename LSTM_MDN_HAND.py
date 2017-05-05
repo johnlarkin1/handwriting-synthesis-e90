@@ -455,8 +455,6 @@ def sample(session, generate_config, duration=600):
 
     writing = np.zeros((duration,3), dtype = np.float32)
 
-    prev_state = session.run(self.initial_state)
-
     for i in range(duration):
         generate_data, generate_seq = get_data(prev_x)
 
