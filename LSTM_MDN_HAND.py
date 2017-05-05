@@ -657,26 +657,25 @@ def main():
 
     # generate input producers and models -- again, not 100% sure why
     # we do the name_scope here...
-    if not ONLY_HW:
-        with tf.name_scope('train'):
-            train_input = Input(train_data, train_seq, train_config)
-            with tf.variable_scope('model', reuse=None, initializer=initializer):
-                train_model = LSTMCascade(train_config, train_input, is_train=True)
+    with tf.name_scope('train'):
+        train_input = Input(train_data, train_seq, train_config)
+        with tf.variable_scope('model', reuse=None, initializer=initializer):
+            train_model = LSTMCascade(train_config, train_input, is_train=True)
 
-        with tf.name_scope('valid'):
-            valid_input = Input(valid_data, valid_seq, train_config)
-            with tf.variable_scope('model', reuse=True, initializer=initializer):
-                valid_model = LSTMCascade(train_config, train_input, is_train=False)
-                
-        # with tf.name_scope('test'):
-        #     test_input = Input(test_data, test_config)
-        #     with tf.variable_scope('model', reuse=True, initializer=initializer):
-        #         test_model = LSTMCascade(test_config, test_input, is_train=False)
+    with tf.name_scope('valid'):
+        valid_input = Input(valid_data, valid_seq, train_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            valid_model = LSTMCascade(train_config, train_input, is_train=False)
+            
+    # with tf.name_scope('test'):
+    #     test_input = Input(test_data, test_config)
+    #     with tf.variable_scope('model', reuse=True, initializer=initializer):
+    #         test_model = LSTMCascade(test_config, test_input, is_train=False)
 
-        with tf.name_scope('query'):
-            query_input = Input(query_data, query_seq, query_config)
-            with tf.variable_scope('model', reuse=True, initializer=initializer):
-                query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
+    with tf.name_scope('query'):
+        query_input = Input(query_data, query_seq, query_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
     
     prev_x = np.zeros((2,1,3), dtype = np.float32)
     generate_data, generate_seq = get_data(prev_x)
