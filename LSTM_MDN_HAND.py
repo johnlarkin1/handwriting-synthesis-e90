@@ -449,7 +449,7 @@ class LSTMCascade(object):
                 
 def sample(session, generate_config, initializer, duration=600):
 
-    prev_x = np.zeros((1,1,3), dtype=np.float32)
+    prev_x = np.zeros((2,1,3), dtype=np.float32)
 
     prev_x[0,0,2] = 1
 
