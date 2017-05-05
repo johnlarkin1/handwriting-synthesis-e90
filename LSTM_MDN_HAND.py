@@ -467,6 +467,7 @@ def sample(session, generate_config, initializer, duration=600):
                 tf.train.start_queue_runners(session)
                 
                 sample_pt = generate_model.sample(session, prev_x)
+                print('sample pt shape: {}'.format(sample_pt.shape))
 
                 prev_x = np.vstack((prev_x, sample_pt))
 
