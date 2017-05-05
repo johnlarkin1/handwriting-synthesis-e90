@@ -464,15 +464,15 @@ def sample(session, generate_config, initializer, duration=600):
             with tf.variable_scope('model', reuse=True, initializer=initializer):
                 generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
 
-                tf.train.start_queue_runners(session)
-                
-                sample_pt = generate_model.sample(session, prev_x)
-                print('sample pt shape: {}'.format(sample_pt.shape))
-                print('prev_x shape: {}'.format(prev_x.shape))
+        tf.train.start_queue_runners(session)
+        
+        sample_pt = generate_model.sample(session, prev_x)
+        print('sample pt shape: {}'.format(sample_pt.shape))
+        print('prev_x shape: {}'.format(prev_x.shape))
 
-                prev_x = np.vstack((prev_x, sample_pt.reshape(-1,1,3)))
+        prev_x = np.vstack((prev_x, sample_pt.reshape(-1,1,3)))
 
-                writing[i,:] = sample_pt
+        writing[i,:] = sample_pt
 
     return writing
 
