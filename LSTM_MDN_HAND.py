@@ -38,7 +38,7 @@ num_epochs = 100
 update_every = 10
 
 # how often to save
-save_every = 1 
+save_every = 2
 
 # initial weight scaling
 init_scale = 0.1
@@ -540,7 +540,7 @@ def make_handwriting_plot(generated_data, generated_seq):
     if do_diff:
         data = integrate(generated_data, generated_seq)
     plt.clf()
-    plt.plot(data[:,0], data[:,1], 'r.')
+    plt.plot(data[:,0], data[:,1], 'r.', markersize=3)
     plt.axis('equal')
     plt.title(titlestr)
     plt.savefig('GeneratedHW.pdf')
@@ -802,8 +802,8 @@ def main():
                 # if not os.path.isdir('models'):
                 #     os.mkdir('models')
 
-                # written_path = saver.save(session, 'models/rnn_demo',
-                #           global_step=epoch)
+                written_path = saver.save(session, 'models/backup/rnn_demo',
+                          global_step=epoch)
                 # print('saved model to {}'.format(written_path))
 
                 print()
@@ -812,7 +812,7 @@ def main():
         print('saved final model to {}'.format(written_path))
         # do final update
         l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('final', l, query_data, query_seg, xrng, yrng, xg, pred, 1000)
+        make_heat_plot('final', l, query_data, seq, xrng, yrng, xg, pred, 1000)
     
 
 if __name__ == '__main__':
