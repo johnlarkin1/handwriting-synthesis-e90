@@ -477,7 +477,7 @@ class LSTMCascade(object):
             for i in range(duration):
                 print('At sample iteration: {}'.format(i))
 
-                feed_dict = {self.lstm_input : prev_x, self.state_stack = prev_state}
+                feed_dict = {self.lstm_input : prev_x, self.state_stack : prev_state}
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
                 # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
 
