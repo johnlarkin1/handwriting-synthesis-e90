@@ -444,7 +444,7 @@ class LSTMCascade(object):
 
         sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
 
-        return sample_pt
+        return sample
                 
 def sample(session, generate_config, initializer, duration=600):
 
@@ -455,6 +455,7 @@ def sample(session, generate_config, initializer, duration=600):
     writing = np.zeros((duration,3), dtype = np.float32)
 
     for i in range(duration):
+        print("At iteration {}".format(i))
         generate_data, generate_seq = get_data(prev_x)
 
         with tf.name_scope('generate'+str(i)):
