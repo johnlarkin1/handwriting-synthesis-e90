@@ -201,7 +201,7 @@ class LSTMCascade(object):
         if is_sample:
             self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
-            self.batch_size = tf.placeholder(tf.float32)
+            self.batch_size = tf.placeholder(tf.int32)
             batch_size = self.batch_size
         else:
             self.lstm_input = model_input.x
