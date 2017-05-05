@@ -460,7 +460,7 @@ class LSTMCascade(object):
             prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
             prev_state = np.vstack((next_state, prev_state))
             print(prev_state)
-            print('self.lstm_input: {}'.format(self.lstm_input)
+            print('self.lstm_input: {}'.format(self.lstm_input))
             print('prev_x after vstack: {}'.format(prev_x))
 
         return writing
