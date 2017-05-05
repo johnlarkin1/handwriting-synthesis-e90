@@ -20,7 +20,7 @@ PLOT = 1
 d_type = tf.float32
 
 # Batch size for training
-train_batch_size = 30
+train_batch_size = 50
 
 # Number of steps (RNN rollout) for training
 train_num_steps = 300
@@ -32,7 +32,7 @@ hidden_size = 3
 train_keep_prob = 0.80
 
 # number of training epochs
-num_epochs = 45
+num_epochs = 100
 
 # how often to print/plot
 update_every = 10
@@ -620,8 +620,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:2000]
-    our_valid_data = data.valid_data[0:2000]
+    our_train_data = data.data[0:5000]
+    our_valid_data = data.valid_data[0:5000]
     our_query_data = data.valid_data[225:227]
 
     # generate our train data
@@ -812,7 +812,7 @@ def main():
         print('saved final model to {}'.format(written_path))
         # do final update
         l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
+        make_heat_plot('final', l, query_data, query_seg, xrng, yrng, xg, pred, 1000)
     
 
 if __name__ == '__main__':
