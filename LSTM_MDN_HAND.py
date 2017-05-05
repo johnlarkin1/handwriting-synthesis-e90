@@ -450,7 +450,7 @@ class LSTMCascade(object):
 
                 feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                prev_state[level] = np.vstack((prev_state[level], next_state[level]))
+                
                 # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
 
             sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
@@ -458,7 +458,8 @@ class LSTMCascade(object):
             print('sample.shape : {}'.format(sample.shape))
             writing[i, :] = sample
             prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
-            prev_state = np.vstack((next_state, prev_state))
+            for level in range(len(prev_state)):
+                prev_state[level] = np.vstack((prev_state[level], next_state[level]))
             print(prev_state)
             print('self.lstm_input: {}'.format(self.lstm_input))
             print('prev_x after vstack: {}'.format(prev_x))
