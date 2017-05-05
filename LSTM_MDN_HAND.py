@@ -436,7 +436,6 @@ class LSTMCascade(object):
         c, h = self.initial_state[0]
 
         feed_dict = {
-            self.lstm_input : x,
             c: prev_state[0].c,
             h: prev_state[0].h,
         }
@@ -462,7 +461,7 @@ def sample(session, generate_config, initializer, duration=600):
             generate_input = Input(generate_data, generate_seq, generate_config)
 
             with tf.variable_scope('model', reuse=True, initializer=initializer):
-                generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
+                generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
 
                 tf.train.start_queue_runners(session)
                 
