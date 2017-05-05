@@ -468,8 +468,9 @@ def sample(session, generate_config, initializer, duration=600):
                 
                 sample_pt = generate_model.sample(session, prev_x)
                 print('sample pt shape: {}'.format(sample_pt.shape))
+                print('prev_x shape: {}'.format(prev_x.shape))
 
-                prev_x = np.vstack((prev_x, sample_pt))
+                prev_x = np.vstack((prev_x, sample_pt.reshape(-1,1,3)))
 
                 writing[i,:] = sample_pt
 
