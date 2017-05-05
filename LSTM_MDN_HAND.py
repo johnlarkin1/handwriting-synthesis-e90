@@ -67,8 +67,6 @@ GENERATE_HANDWRITING = True
 # do we want to visualize with tensorboard
 CREATE_TENSORBOARD = False
 
-# just get handwriting 
-ONLY_HW = True
 ######################################################################
 # Helper function for below
 
@@ -430,67 +428,40 @@ class LSTMCascade(object):
         return self.mixture_prob
 
     def sample(self, session, duration=600):
-        def sample_gaussian_2d(mu1, mu2, s1, s2, rho):
-            mean = [mu1, mu2]
-            cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
-            x = np.random.multivariate_normal(mean, cov, 1)
-            return x[0][0], x[0][1]
-        CHEAT = False
 
-        if CHEAT:
-            prev_x = np.zeros((4,1,3), dtype = np.float32)
-            prev_x[0,0,2] = 1
-            prev_x[:,0,0] = 2.5
-            prev_x[:,0,1] = 5.5
-            writing = np.zeros((duration,3), dtype = np.float32)
-            prev_state = session.run(self.initial_state)
-            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
-            for i in range(duration):
-                if i < 4:
-                    x_in = prev_x[i].reshape(-1,1,3)
-                else:
-                    x_in = sample.reshape(-1,1,3)
+        # first stroke
+        prev_x = np.zeros((1,1,3), dtype=np.float32)
+        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
 
-                for level in range(len(prev_state)):
-                    c, h = self.initial_state[level]
+        # this will hold all the info
+        writing = np.zeros((duration,3), dtype=np.float32)
 
-                    feed_dict = {self.lstm_input : x_in, c: prev_state[level].c, h: prev_state[level].h }
-                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                print('This is mu: {}'.format(mu))
-                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
-                writing[i,:] = sample
-                prev_state = next_state
+        # this is a list of three states
+        prev_state = session.run(self.initial_state)
 
-        else:
-            # first stroke
-            prev_x = np.zeros((1,1,3), dtype=np.float32)
-            prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
+        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
 
-            # this will hold all the info
-            writing = np.zeros((duration,3), dtype=np.float32)
+        for i in range(duration):
+            print('At sample iteration: {}'.format(i))
 
-            # this is a list of three states
-            prev_state = session.run(self.initial_state)
+            for level in range(len(prev_state)):
 
-            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+                c, h = self.initial_state[level]
 
-            for i in range(duration):
-                print('At sample iteration: {}'.format(i))
-
-                feed_dict = {self.lstm_input : prev_x, self.state_stack : prev_state}
+                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                 pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                prev_state[level] = np.vstack((prev_state[level], next_state[level]))
                 # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
 
-
-                sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
-                # print('sample: {}'.format(sample))
-                print('sample.shape : {}'.format(sample.shape))
-                writing[i, :] = sample
-                prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
-                prev_state = next_state
-                print('self.lstm_input: {}'.format(self.lstm_input))
-                print('prev_x after vstack: {}'.format(prev_x))
-                # print('next_state: {}'.format(next_state))
+            sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
+            # print('sample: {}'.format(sample))
+            print('sample.shape : {}'.format(sample.shape))
+            writing[i, :] = sample
+            prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
+            prev_state = np.vstack((next_state, prev_state))
+            print(prev_state)
+            print('self.lstm_input: {}'.format(self.lstm_input)
+            print('prev_x after vstack: {}'.format(prev_x))
 
         return writing
                 
