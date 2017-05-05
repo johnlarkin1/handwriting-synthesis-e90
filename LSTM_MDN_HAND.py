@@ -447,7 +447,7 @@ class LSTMCascade(object):
 
         return sample_pt
                 
-def sample(session, generate_config, duration=600):
+def sample(session, generate_config, initializer, duration=600):
 
     prev_x = np.zeros((1,1,3), dtype=np.float32)
 
@@ -733,7 +733,7 @@ def main():
 
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            writing = sample(session, generate_config)
+            writing = sample(session, generate_config, initializer)
             seq = np.ones(shape = (writing.shape[0], 1))
             seq[0,0] = 0
             make_handwriting_plot(strokes, seq)
