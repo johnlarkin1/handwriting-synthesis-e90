@@ -450,7 +450,7 @@ class LSTMCascade(object):
                 self.lstm_input : prev_x,
                 c: prev_state[0].c,
                 h: prev_state[0].h,
-                self.batch_size = prev_x.shape[0]
+                self.batch_size : prev_x.shape[0]
             }
             pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
             sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
