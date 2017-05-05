@@ -201,8 +201,6 @@ class LSTMCascade(object):
         if is_sample:
             self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
-            self.batch_size = tf.placeholder(tf.int32)
-            batch_size = self.batch_size
         else:
             self.lstm_input = model_input.x
 
@@ -429,37 +427,52 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=600):
-
-        # first stroke
-        prev_x = np.zeros((1,1,3), dtype=np.float32)
-        prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
-
-        # this will hold all the info
-        writing = np.zeros((duration,3), dtype=np.float32)
-
+    def sample(self, session, x):
         # this is a list of three states
         prev_state = session.run(self.initial_state)
 
         fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
 
-        for i in range(duration):
-            print('At sample iteration: {}'.format(i))
-            c, h = self.initial_state[0]
-            feed_dict = {
-                self.lstm_input : prev_x,
-                c: prev_state[0].c,
-                h: prev_state[0].h,
-                self.batch_size : prev_x.shape[0]
-            }
-            pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-            sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
-            writing[i,:] = sample
-            prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
-            print('sample shape: {}'.format(sample.shape))
+        c, h = self.initial_state[0]
 
-        return writing
+        feed_dict = {
+            self.lstm_input : x,
+            c: prev_state[0].c,
+            h: prev_state[0].h,
+        }
+
+        pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+
+        sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
+
+        return sample_pt
                 
+def sample(session, generate_config, duration=600):
+
+    prev_x = np.zeros((1,1,3), dtype=np.float32)
+
+    prev_x[0,0,2] = 1
+
+    writing = np.zeros((duration,3), dtype = np.float32)
+
+    prev_state = session.run(self.initial_state)
+
+    for i in range(duration):
+        generate_data, generate_seq = get_data(prev_x)
+
+        with tf.name_scope('generate'+str(i)):
+            generate_input = Input(generate_data, generate_seq, generate_config)
+
+            with tf.variable_scope('model', reuse=True, initializer=initializer):
+                generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
+
+                sample_pt = generate_model.sample(session, prev_x)
+
+                prev_x = np.vstack((prev_x, sample_pt))
+
+                writing[i,:] = sample_pt
+
+    return writing
 
 ######################################################################
 # plot input vs predictions
@@ -722,8 +735,8 @@ def main():
 
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            strokes = generate_model.sample(session)
-            seq = np.ones(shape = (strokes.shape[0], 1))
+            writing = sample(session, generate_config)
+            seq = np.ones(shape = (writing.shape[0], 1))
             seq[0,0] = 0
             make_handwriting_plot(strokes, seq)
             print('Handwriting generated.')
