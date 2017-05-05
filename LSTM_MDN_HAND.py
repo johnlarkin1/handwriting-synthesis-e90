@@ -464,6 +464,8 @@ def sample(session, generate_config, initializer, duration=600):
             with tf.variable_scope('model', reuse=True, initializer=initializer):
                 generate_model = LSTMCascade(generate_config, generate_input, is_sample=True, is_train=False)
 
+                tf.train.start_queue_runners(session)
+                
                 sample_pt = generate_model.sample(session, prev_x)
 
                 prev_x = np.vstack((prev_x, sample_pt))
