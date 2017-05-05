@@ -67,6 +67,8 @@ GENERATE_HANDWRITING = True
 # do we want to visualize with tensorboard
 CREATE_TENSORBOARD = False
 
+# just get handwriting 
+ONLY_HW = True
 ######################################################################
 # Helper function for below
 
@@ -475,13 +477,9 @@ class LSTMCascade(object):
             for i in range(duration):
                 print('At sample iteration: {}'.format(i))
 
-                for level in range(len(prev_state)):
-
-                    c, h = self.initial_state[level]
-
-                    feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
-                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                    # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
+                feed_dict = {self.lstm_input : prev_x, self.state_stack = prev_state}
+                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
 
 
                 sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
@@ -490,6 +488,8 @@ class LSTMCascade(object):
                 writing[i, :] = sample
                 prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
                 prev_state = next_state
+                print('self.lstm_input: {}'.format(self.lstm_input))
+                print('prev_x after vstack: {}'.format(prev_x))
                 # print('next_state: {}'.format(next_state))
 
         return writing
@@ -657,25 +657,26 @@ def main():
 
     # generate input producers and models -- again, not 100% sure why
     # we do the name_scope here...
-    with tf.name_scope('train'):
-        train_input = Input(train_data, train_seq, train_config)
-        with tf.variable_scope('model', reuse=None, initializer=initializer):
-            train_model = LSTMCascade(train_config, train_input, is_train=True)
+    if not ONLY_HW:
+        with tf.name_scope('train'):
+            train_input = Input(train_data, train_seq, train_config)
+            with tf.variable_scope('model', reuse=None, initializer=initializer):
+                train_model = LSTMCascade(train_config, train_input, is_train=True)
 
-    with tf.name_scope('valid'):
-        valid_input = Input(valid_data, valid_seq, train_config)
-        with tf.variable_scope('model', reuse=True, initializer=initializer):
-            valid_model = LSTMCascade(train_config, train_input, is_train=False)
-            
-    # with tf.name_scope('test'):
-    #     test_input = Input(test_data, test_config)
-    #     with tf.variable_scope('model', reuse=True, initializer=initializer):
-    #         test_model = LSTMCascade(test_config, test_input, is_train=False)
+        with tf.name_scope('valid'):
+            valid_input = Input(valid_data, valid_seq, train_config)
+            with tf.variable_scope('model', reuse=True, initializer=initializer):
+                valid_model = LSTMCascade(train_config, train_input, is_train=False)
+                
+        # with tf.name_scope('test'):
+        #     test_input = Input(test_data, test_config)
+        #     with tf.variable_scope('model', reuse=True, initializer=initializer):
+        #         test_model = LSTMCascade(test_config, test_input, is_train=False)
 
-    with tf.name_scope('query'):
-        query_input = Input(query_data, query_seq, query_config)
-        with tf.variable_scope('model', reuse=True, initializer=initializer):
-            query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
+        with tf.name_scope('query'):
+            query_input = Input(query_data, query_seq, query_config)
+            with tf.variable_scope('model', reuse=True, initializer=initializer):
+                query_model = LSTMCascade(query_config, query_input, is_train=False, external_targets=mesh_target)
     
     prev_x = np.zeros((2,1,3), dtype = np.float32)
     generate_data, generate_seq = get_data(prev_x)
