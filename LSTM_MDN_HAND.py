@@ -201,6 +201,8 @@ class LSTMCascade(object):
         if is_sample:
             self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
+            self.batch_size = tf.placeholder(tf.float32)
+            batch_size = self.batch_size
         else:
             self.lstm_input = model_input.x
 
@@ -443,29 +445,18 @@ class LSTMCascade(object):
 
         for i in range(duration):
             print('At sample iteration: {}'.format(i))
-
-            for level in range(len(prev_state)):
-
-                c, h = self.initial_state[level]
-
-                feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
-                pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                print('next_state', next_state)
-                
-                # print('mu: {} \n sigma: {} \n corr: {} \n pis: {} \n eos: {}'.format(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos))
-
+            c, h = self.initial_state[0]
+            feed_dict = {
+                self.lstm_input : prev_x,
+                c: prev_state[0].c,
+                h: prev_state[0].h,
+                self.batch_size = prev_x.shape[0]
+            }
+            pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
             sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
-            # print('sample: {}'.format(sample))
-
-            print('sample.shape : {}'.format(sample.shape))
-            print('FINAL NEXT STATE', next_state)
-            writing[i, :] = sample
+            writing[i,:] = sample
             prev_x = np.vstack((prev_x, sample.reshape(-1,1,3)))
-            for level in range(len(prev_state)):
-                prev_state[level] = np.vstack((prev_state[level], next_state[level]))
-            print(prev_state)
-            print('self.lstm_input: {}'.format(self.lstm_input))
-            print('prev_x after vstack: {}'.format(prev_x))
+            print('sample shape: {}'.format(sample.shape))
 
         return writing
                 
