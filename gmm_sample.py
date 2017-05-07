@@ -89,7 +89,8 @@ def gmm_sample(mu, sigma, rho, pi, eos):
     
     s1 = sigma[:, 0].reshape((-1, 1))
     s2 = sigma[:, 1].reshape((-1, 1))
-
+    print(mu)
+    print(mu.shape)
     mean = [mu[0], mu[1]]
     cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
     x = np.random.multivariate_normal(mean, cov, 1)
