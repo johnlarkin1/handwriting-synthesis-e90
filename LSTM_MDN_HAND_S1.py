@@ -341,6 +341,7 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             self.mixture_prob = ourMDN.return_mixture_prob()
+            self.ncomponents = ourMDN.NCOMPONENTS
 
         # loss is calculated in our MDN
         self.loss = tf.reduce_sum(loss)
@@ -449,7 +450,7 @@ class LSTMCascade(object):
                     feed_dict = {self.lstm_input : x_in, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
                 print('This is mu: {}'.format(mu))
-                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
                 writing[i,:] = sample
                 prev_state = next_state
 
@@ -476,7 +477,7 @@ class LSTMCascade(object):
                     feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
-                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
                 # print('sample: {}'.format(sample))
                 # print('sample.shape : {}'.format(sample.shape))
                 writing[i, :] = sample
