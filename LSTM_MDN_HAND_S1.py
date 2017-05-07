@@ -23,7 +23,7 @@ d_type = tf.float32
 train_batch_size = 50
 
 # Number of steps (RNN rollout) for training
-train_num_steps = 300
+train_num_steps = 400
 
 # Dimension of LSTM input/output
 hidden_size = 3
@@ -32,13 +32,13 @@ hidden_size = 3
 train_keep_prob = 0.80
 
 # number of training epochs
-num_epochs = 100
+num_epochs = 400
 
 # how often to print/plot
 update_every = 10
 
 # how often to save
-save_every = 2
+save_every = 2 
 
 # initial weight scaling
 init_scale = 0.1
@@ -199,7 +199,7 @@ class LSTMCascade(object):
 
         # we don't need to reshape the data!
         if is_sample:
-            self.lstm_input = tf.placeholder(tf.float32, shape = [None,1,3])
+            self.lstm_input = tf.placeholder(tf.float32, shape = [1,1,3])
             model_input.y = tf.zeros(shape=[1,1,3])
         else:
             self.lstm_input = model_input.x
@@ -341,7 +341,6 @@ class LSTMCascade(object):
 
         with tf.variable_scope('MDN'):
             self.mixture_prob = ourMDN.return_mixture_prob()
-            self.ncomponents = ourMDN.NCOMPONENTS
 
         # loss is calculated in our MDN
         self.loss = tf.reduce_sum(loss)
@@ -427,56 +426,65 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session):
-        # this is a list of three states
-        prev_state = session.run(self.initial_state)
+    def sample(self, session, duration=100):
+        CHEAT = False
 
-        fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+        if CHEAT:
+            prev_x = np.zeros((4,1,3), dtype = np.float32)
+            prev_x[0,0,2] = 1
+            prev_x[:,0,0] = 2.5
+            prev_x[:,0,1] = 5.5
+            writing = np.zeros((duration,3), dtype = np.float32)
+            prev_state = session.run(self.initial_state)
+            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+            for i in range(duration):
+                if i < 4:
+                    x_in = prev_x[i].reshape(-1,1,3)
+                else:
+                    x_in = sample.reshape(-1,1,3)
 
-        c, h = self.initial_state[0]
+                for level in range(len(prev_state)):
+                    c, h = self.initial_state[level]
 
-        feed_dict = {
-            c: prev_state[0].c,
-            h: prev_state[0].h,
-        }
+                    feed_dict = {self.lstm_input : x_in, c: prev_state[level].c, h: prev_state[level].h }
+                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+                print('This is mu: {}'.format(mu))
+                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                writing[i,:] = sample
+                prev_state = next_state
 
-        pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+        else:
+            # first stroke
+            prev_x = np.zeros((1,1,3), dtype=np.float32)
+            prev_x[0,0,2] = 1 # we want to see the beginning of a new stroke
 
-        sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
+            # this will hold all the info
+            writing = np.zeros((duration,3), dtype=np.float32)
 
-        return sample
+            # this is a list of three states
+            prev_state = session.run(self.initial_state)
+
+            fetches = [self.pis, self.corr, self.mu, self.sigma, self.eos, self.final_state]
+
+            for i in range(duration):
+                print('At sample iteration: {}'.format(i))
+
+                for level in range(len(prev_state)):
+
+                    c, h = self.initial_state[level]
+
+                    feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
+                    pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
+
+                sample = gmm_sample(mu.reshape(-1,3,2), sigma.reshape(-1,3,2), corr, pis, eos)
+                # print('sample: {}'.format(sample))
+                # print('sample.shape : {}'.format(sample.shape))
+                writing[i, :] = sample
+                prev_x = sample.reshape(-1,1,3)
+                prev_state = next_state
+
+        return writing
                 
-def sample(session, generate_config, initializer, duration=200):
-
-    prev_x = np.zeros((2,1,3), dtype=np.float32)
-
-    prev_x[0,0,2] = 1
-
-    writing = np.zeros((duration,3), dtype = np.float32)
-
-    for i in range(duration):
-        print("At iteration {}".format(i))
-        generate_data, generate_seq = get_data(prev_x)
-        if i < 5:
-            print(generate_data)
-
-        with tf.name_scope('generate'+str(i)):
-            generate_input = Input(generate_data, generate_seq, generate_config)
-
-            with tf.variable_scope('model', reuse=True, initializer=initializer):
-                generate_model = LSTMCascade(generate_config, generate_input, is_sample=False, is_train=False)
-
-        tf.train.start_queue_runners(session)
-        
-        sample_pt = generate_model.sample(session)
-        print('sample pt shape: {}'.format(sample_pt.shape))
-        print('prev_x shape: {}'.format(prev_x.shape))
-
-        prev_x = np.vstack((prev_x, sample_pt.reshape(-1,1,3)))
-
-        writing[i,:] = sample_pt
-
-    return writing
 
 ######################################################################
 # plot input vs predictions
@@ -523,7 +531,7 @@ def make_handwriting_plot(generated_data, generated_seq):
     if do_diff:
         data = integrate(generated_data, generated_seq)
     plt.clf()
-    plt.plot(data[:,0], data[:,1], 'r.', markersize=3)
+    plt.plot(data[:,0], data[:,1], 'r.')
     plt.axis('equal')
     plt.title(titlestr)
     plt.savefig('GeneratedHW.pdf')
@@ -603,9 +611,9 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:50]
-    our_valid_data = data.valid_data[0:50]
-    our_query_data = data.valid_data[225:227]
+    our_train_data = data.data[0:1000]
+    our_valid_data = data.valid_data[0:1000]
+    our_query_data = data.valid_data[304:306]
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
@@ -615,7 +623,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[0:145, :], query_seq[0:145,:]
+    query_data, query_seq = query_data[0:178, :], query_seq[0:178,:]
 
     # Let's get our mesh grid for visualization
     int_query_data = integrate(query_data, query_seq)
@@ -645,10 +653,10 @@ def main():
         with tf.variable_scope('model', reuse=None, initializer=initializer):
             train_model = LSTMCascade(train_config, train_input, is_train=True)
 
-    # with tf.name_scope('valid'):
-    #     valid_input = Input(valid_data, valid_seq, train_config)
-    #     with tf.variable_scope('model', reuse=True, initializer=initializer):
-    #         valid_model = LSTMCascade(train_config, train_input, is_train=False)
+    with tf.name_scope('valid'):
+        valid_input = Input(valid_data, valid_seq, train_config)
+        with tf.variable_scope('model', reuse=True, initializer=initializer):
+            valid_model = LSTMCascade(train_config, train_input, is_train=False)
             
     # with tf.name_scope('test'):
     #     test_input = Input(test_data, test_config)
@@ -737,17 +745,19 @@ def main():
                 l, pred = model.run_epoch(session,return_predictions=True, query=True)
                 make_heat_plot_no_integrate('Model {}'.format(idx), l, int_query_data, xrng, yrng, xg, pred, idx)
 
+        # MATT: can you help here?
         if GENERATE_HANDWRITING:
             # not sure what model we should pass in
-            writing = sample(session, generate_config, initializer)
-            seq = np.ones(shape = (writing.shape[0], 1))
+            strokes = generate_model.sample(session)
+            seq = np.ones(shape = (strokes.shape[0], 1))
             seq[0,0] = 0
-            make_handwriting_plot(writing, seq)
+            make_handwriting_plot(strokes, seq)
             print('Handwriting generated.')
 
         if CREATE_TENSORBOARD:
             writer = tf.summary.FileWriter("tensorboard_output", session.graph)
             writer.close()
+
 
     else:
 
@@ -761,15 +771,8 @@ def main():
             l = train_model.run_epoch(session)
             print('training loss at epoch {}    is {}'.format(epoch, l))
             if epoch % save_every == 0:
-
                 print('Saving model..... ')
-
-                if not os.path.isdir('models'):
-                    os.mkdir('models')
-
-                written_path = saver.save(session, 'models/rnn_demo',
-                          global_step=epoch)
-                print('saved model to {}'.format(written_path))
+                saver.save(session, 'LSTM-MDN-model')
 
             # see if we should do a printed/graphical update
             if epoch % update_every == 0:
@@ -782,12 +785,12 @@ def main():
                 l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
                 # make_heat_plot('epoch {}'.format(epoch), l, query_data, query_seq, xrng, yrng, xg, pred, epoch)
 
-                # if not os.path.isdir('models'):
-                #     os.mkdir('models')
+                if not os.path.isdir('models'):
+                    os.mkdir('models')
 
-                written_path = saver.save(session, 'models/backup/rnn_demo',
+                written_path = saver.save(session, 'models/rnn_demo',
                           global_step=epoch)
-                # print('saved model to {}'.format(written_path))
+                print('saved model to {}'.format(written_path))
 
                 print()
 
@@ -795,7 +798,7 @@ def main():
         print('saved final model to {}'.format(written_path))
         # do final update
         l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('final', l, query_data, seq, xrng, yrng, xg, pred, 1000)
+        make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
     
 
 if __name__ == '__main__':
