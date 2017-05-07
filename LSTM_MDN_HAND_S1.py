@@ -35,10 +35,10 @@ train_keep_prob = 0.80
 num_epochs = 400
 
 # how often to print/plot
-update_every = 10
+update_every = 15
 
 # how often to save
-save_every = 2 
+save_every = 4
 
 # initial weight scaling
 init_scale = 0.1
