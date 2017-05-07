@@ -59,7 +59,7 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
 GENERATE_HANDWRITING = True
@@ -798,7 +798,7 @@ def main():
                 written_path = saver.save(session, 'models/rnn_demo',
                           global_step=epoch)
                 print('saved model to {}'.format(written_path))
-                
+
             # see if we should do a printed/graphical update
             if epoch % update_every == 0:
 
@@ -823,7 +823,7 @@ def main():
         print('saved final model to {}'.format(written_path))
         # do final update
         l, pred = query_model.run_epoch(session, return_predictions=True, query=True)
-        make_heat_plot('final', l, query_data, xrng, yrng, xg, pred)
+        make_heat_plot('final', l, query_data, seq, xrng, yrng, xg, pred, 1000)
     
 
 if __name__ == '__main__':
