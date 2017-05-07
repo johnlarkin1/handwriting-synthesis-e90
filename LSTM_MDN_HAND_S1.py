@@ -427,7 +427,7 @@ class LSTMCascade(object):
 
         return self.mixture_prob
 
-    def sample(self, session, duration=100):
+    def sample(self, session, duration=600):
         CHEAT = False
 
         if CHEAT:
