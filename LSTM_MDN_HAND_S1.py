@@ -59,7 +59,7 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
 GENERATE_HANDWRITING = True
@@ -575,7 +575,7 @@ def make_heat_plot_no_integrate(epoch, loss, query_data, xrng, yrng, xg, pred, i
     ax.yaxis.set_visible(False)
     # plt.show()
     plt.title(titlestr)
-    plt.savefig('NewGifs/LSTMHeatMap' + str(i) + '.pdf', bbox_inches='tight')
+    plt.savefig('NewGifs/LSTMHeatMap' + str(i) + '.png', bbox_inches='tight')
 
 ######################################################################
 # main function
@@ -624,7 +624,7 @@ def main():
 
     # get the query data
     query_data, query_seq = get_data(our_query_data)
-    query_data, query_seq = query_data[0:178, :], query_seq[0:178,:]
+    query_data, query_seq = query_data[0:60, :], query_seq[0:60,:]
 
     # Let's get our mesh grid for visualization
     int_query_data = integrate(query_data, query_seq)
