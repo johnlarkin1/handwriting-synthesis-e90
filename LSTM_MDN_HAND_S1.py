@@ -785,15 +785,20 @@ def main():
         # for each epoch
         for epoch in range(num_epochs):
 
-            print('Saving model..... ')
+            # run the epoch & get training loss
+            l = train_model.run_epoch(session)
+            print('training loss at epoch {}    is {}'.format(epoch, l))
+            if epoch % save_every == 0:
 
-            if not os.path.isdir('models'):
-                os.mkdir('models')
+                print('Saving model..... ')
 
-            written_path = saver.save(session, 'models/rnn_demo',
-                      global_step=epoch)
-            print('saved model to {}'.format(written_path))
+                if not os.path.isdir('models'):
+                    os.mkdir('models')
 
+                written_path = saver.save(session, 'models/rnn_demo',
+                          global_step=epoch)
+                print('saved model to {}'.format(written_path))
+                
             # see if we should do a printed/graphical update
             if epoch % update_every == 0:
 
