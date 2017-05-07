@@ -430,6 +430,22 @@ class LSTMCascade(object):
     def sample(self, session, duration=600):
         CHEAT = False
 
+        def get_pi_idx(x, pdf):
+            N = pdf.size
+            accumulate = 0
+            for i in range(0, N):
+                accumulate += pdf[i]
+                if (accumulate >= x):
+                    return i
+            print('error with sampling ensemble')
+            return -1
+
+        def otoro_sample(mu1, mu2, s1, s2, rho):
+            mean = [mu1, mu2]
+            cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
+            x = np.random.multivariate_normal(mean, cov, 1)
+            return x
+
         if CHEAT:
             prev_x = np.zeros((4,1,3), dtype = np.float32)
             prev_x[0,0,2] = 1
@@ -477,7 +493,8 @@ class LSTMCascade(object):
                     feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
 
-                sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
+                # sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
+                sample = 
                 # print('sample: {}'.format(sample))
                 # print('sample.shape : {}'.format(sample.shape))
                 writing[i, :] = sample
