@@ -83,22 +83,25 @@ def gmm_sample(mu, sigma, rho, pi, eos):
     mu = mu[idx, mixture_comp]
     sigma = sigma[idx, mixture_comp]
     rho = rho[idx, mixture_comp].reshape((-1, 1))
-    print('sigma', sigma)
-    print('sigma shape', sigma.shape)
     
     ##################################################
     # do sampling
+    # otoro way
     
     s1 = sigma[:, 0].reshape((-1, 1))
     s2 = sigma[:, 1].reshape((-1, 1))
-    print('s1: {} \ns1.shape: {}'.format(s1,s1.shape))
-    print('s2: {} \ns2.shape: {}'.format(s2,s2.shape))
     mean = [mu[0,0], mu[0,1]]
+    s1 = s1[0][0]
+    s2 = s2[0][0]
+    rho = rho[0][0]
     cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
     x = np.random.multivariate_normal(mean, cov, 1)
     eos_samples = (np.random.random((n,1)) <= eos).astype(np.float32)
     return np.hstack((x, eos_samples))
 
+    # matt way
+    s1 = sigma[:, 0].reshape((-1, 1))
+    s2 = sigma[:, 1].reshape((-1, 1))
     a = s1
     b = rho*s2
     c = s2*np.sqrt(1.0 - rho**2)
