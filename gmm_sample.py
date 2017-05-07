@@ -6,6 +6,56 @@ import matplotlib.pyplot as plt
 #  sigma is n-by-k-by-2
 #  rho is n-by-k
 #  pi is n-by-k
+# def gmm_sample(mu, sigma, rho, pi, eos):
+
+#     ##################################################
+#     # verify shapes
+    
+#     n, k = rho.shape
+#     assert mu.shape == (n, k, 2)
+#     assert sigma.shape == (n, k, 2)
+#     assert pi.shape == (n, k)
+#     assert eos.shape == (n,)
+
+#     ##################################################
+#     # choose a mixture component
+#     c = np.cumsum(pi, axis=1)
+#     r = np.random.random((n,1))
+
+#     # first index where r less than or equal to c
+#     mixture_comp = (r <= c).argmax(axis=1)
+
+#     ##################################################
+#     # get that component of mu, sigma, rho for each item
+    
+#     idx = np.arange(n)
+    
+#     mu = mu[idx, mixture_comp]
+#     sigma = sigma[idx, mixture_comp]
+#     rho = rho[idx, mixture_comp].reshape((-1, 1))
+    
+#     ##################################################
+#     # do sampling
+    
+#     s1 = sigma[:, 0].reshape((-1, 1))
+#     s2 = sigma[:, 1].reshape((-1, 1))
+
+#     a = s1
+#     b = rho*s2
+#     c = s2*np.sqrt(1.0 - rho**2)
+
+#     rx = np.random.normal(size=(n, 1))
+#     ry = np.random.normal(size=(n, 1))
+
+#     rx_prime = a * rx
+#     ry_prime = b * rx + c * ry
+
+#     r = np.hstack((rx_prime, ry_prime)) + mu
+
+#     eos_samples = (np.random.random((n,1)) <= eos).astype(np.float32)
+
+#     return np.hstack((r, eos_samples))
+
 def gmm_sample(mu, sigma, rho, pi, eos):
 
     ##################################################
@@ -40,6 +90,12 @@ def gmm_sample(mu, sigma, rho, pi, eos):
     s1 = sigma[:, 0].reshape((-1, 1))
     s2 = sigma[:, 1].reshape((-1, 1))
 
+    mean = mu
+    cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
+    x = np.random.multivariate_normal(mean, cov, 1)
+    eos_samples = (np.random.random((n,1)) <= eos).astype(np.float32)
+    return np.hstack((x, eos_samples))
+
     a = s1
     b = rho*s2
     c = s2*np.sqrt(1.0 - rho**2)
@@ -52,7 +108,7 @@ def gmm_sample(mu, sigma, rho, pi, eos):
 
     r = np.hstack((rx_prime, ry_prime)) + mu
 
-    eos_samples = (np.random.random((n,1)) <= eos).astype(np.float32)
+
 
     return np.hstack((r, eos_samples))
 
@@ -102,45 +158,45 @@ def gmm_eval(mu, sigma, rho, pi, eos, x):
 
     return p * p_eos
 
-######################################################################
+# ######################################################################
 
-def main():
+# def main():
 
-    mu = np.array([ 0.3, 0.4, -0.1, -0.7, -0.6, 0.8 ]).reshape((3, 2))
-    sigma = np.array([ 0.5, 0.2, 0.6, 0.5, 0.3, 0.3 ]).reshape((3, 2))
-    rho = np.array([ 0.7, -0.9, 0.1 ])
-    pi = np.array([ 0.6, 0.3, 0.1 ])
-    eos = 0.05
+#     mu = np.array([ 0.3, 0.4, -0.1, -0.7, -0.6, 0.8 ]).reshape((3, 2))
+#     sigma = np.array([ 0.5, 0.2, 0.6, 0.5, 0.3, 0.3 ]).reshape((3, 2))
+#     rho = np.array([ 0.7, -0.9, 0.1 ])   
+#     pi = np.array([ 0.6, 0.3, 0.1 ])
+#     eos = 0.05
 
-    rng = np.linspace(-2.0, 2.0, 100)
-    x, y = np.meshgrid(rng, rng)
+#     rng = np.linspace(-2.0, 2.0, 100)
+#     x, y = np.meshgrid(rng, rng)
 
-    m = np.hstack((x.reshape(-1, 1),
-                   y.reshape(-1, 1),
-                   np.zeros_like(y.reshape(-1, 1))))
+#     m = np.hstack((x.reshape(-1, 1),
+#                    y.reshape(-1, 1),
+#                    np.zeros_like(y.reshape(-1, 1))))
 
-    p = gmm_eval(mu, sigma, rho, pi, eos, m)
-    p = p.reshape(x.shape)
+#     p = gmm_eval(mu, sigma, rho, pi, eos, m)
+#     p = p.reshape(x.shape)
 
-    # generate a number of samples of each thing
-    n_samples = 200
+#     # generate a number of samples of each thing
+#     n_samples = 200
 
-    mu = np.tile(mu, (n_samples, 1, 1))
-    sigma = np.tile(sigma, (n_samples, 1, 1))
-    rho = np.tile(rho, (n_samples, 1))
-    pi = np.tile(pi, (n_samples, 1))
-    eos = np.tile(eos, (n_samples,))
+#     mu = np.tile(mu, (n_samples, 1, 1))
+#     sigma = np.tile(sigma, (n_samples, 1, 1))
+#     rho = np.tile(rho, (n_samples, 1))
+#     pi = np.tile(pi, (n_samples, 1))
+#     eos = np.tile(eos, (n_samples,))
 
-    samples = gmm_sample(mu, sigma, rho, pi, eos)
-    print('sampled eos at rate {}'.format(samples[:,2].mean()))
+#     samples = gmm_sample(mu, sigma, rho, pi, eos)
+#     print('sampled eos at rate {}'.format(samples[:,2].mean()))
 
-    plt.pcolormesh(rng, rng, p)
-    plt.plot(samples[:,0], samples[:,1], 'k.')
-    plt.axis([-2, 2, -2, 2])
-    plt.show()
+#     plt.pcolormesh(rng, rng, p)
+#     plt.plot(samples[:,0], samples[:,1], 'k.')
+#     plt.axis([-2, 2, -2, 2])
+#     plt.show()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 
 
