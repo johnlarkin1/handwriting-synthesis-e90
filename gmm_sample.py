@@ -83,12 +83,16 @@ def gmm_sample(mu, sigma, rho, pi, eos):
     mu = mu[idx, mixture_comp]
     sigma = sigma[idx, mixture_comp]
     rho = rho[idx, mixture_comp].reshape((-1, 1))
+    print('sigma', sigma)
+    print('sigma shape', sigma.shape)
     
     ##################################################
     # do sampling
     
     s1 = sigma[:, 0].reshape((-1, 1))
     s2 = sigma[:, 1].reshape((-1, 1))
+    print('s1: {} \ns1.shape: {}'.format(s1,s1.shape))
+    print('s2: {} \ns2.shape: {}'.format(s2,s2.shape))
     mean = [mu[0,0], mu[0,1]]
     cov = [[s1*s1, rho*s1*s2], [rho*s1*s2, s2*s2]]
     x = np.random.multivariate_normal(mean, cov, 1)
