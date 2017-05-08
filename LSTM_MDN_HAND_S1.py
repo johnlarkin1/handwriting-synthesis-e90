@@ -29,10 +29,10 @@ train_num_steps = 400
 hidden_size = 3
 
 # should we do dropout? (1.0 = nope)
-train_keep_prob = 0.80
+train_keep_prob = 0.90
 
 # number of training epochs
-num_epochs = 400
+num_epochs = 500
 
 # how often to print/plot
 update_every = 15
@@ -629,8 +629,8 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data[0:1000]
-    our_valid_data = data.valid_data[0:1000]
+    our_train_data = data.data
+    our_valid_data = data.valid_data
     our_query_data = data.valid_data[304:306]
 
     # generate our train data
