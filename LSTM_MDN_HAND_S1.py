@@ -59,7 +59,7 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = True
+CREATE_GIFS = False
 
 # do we want to generate handwriting 
 GENERATE_HANDWRITING = True
@@ -492,8 +492,7 @@ class LSTMCascade(object):
 
                     feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                    print('next state: {}'.format(next_state))
-                sys.exit(0)
+                print('next state: {}'.format(next_state))
                     # print('pis: {}\n corr: {}\n sigma: {}\n eos: {}\n next_state: {}'.format(pis, corr, mu, sigma, eos, next_state))
 
                 sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
