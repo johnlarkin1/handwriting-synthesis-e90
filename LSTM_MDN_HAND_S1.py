@@ -492,7 +492,9 @@ class LSTMCascade(object):
 
                     feed_dict = {self.lstm_input : prev_x, c: prev_state[level].c, h: prev_state[level].h }
                     pis, corr, mu, sigma, eos, next_state = session.run(fetches, feed_dict)
-                    print('pis: {}\n corr: {}\n sigma: {}\n eos: {}\n next_state: {}'.format(pis, corr, mu, sigma, eos, next_state))
+                    print('next state: {}'.format(next_state))
+                sys.exit(0)
+                    # print('pis: {}\n corr: {}\n sigma: {}\n eos: {}\n next_state: {}'.format(pis, corr, mu, sigma, eos, next_state))
 
                 sample = gmm_sample(mu.reshape(-1,self.ncomponents,2), sigma.reshape(-1,self.ncomponents,2), corr, pis, eos)
                 # sample = 
