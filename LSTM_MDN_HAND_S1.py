@@ -669,13 +669,13 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    # our_train_data = data.data
-    # our_valid_data = data.valid_data
-    # our_query_data = data.valid_data[304:306]
+    our_train_data = data.data
+    our_valid_data = data.valid_data
+    our_query_data = data.valid_data[304:306]
 
-    our_train_data = get_old_data(4000)
-    our_valid_data = get_old_data(1000)
-    our_query_data = get_old_data(500)
+    # our_train_data = get_old_data(4000)
+    # our_valid_data = get_old_data(1000)
+    # our_query_data = get_old_data(500)
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
