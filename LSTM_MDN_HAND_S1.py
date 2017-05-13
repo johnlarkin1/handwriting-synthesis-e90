@@ -59,7 +59,7 @@ do_diff = True
 learning_rate = 1e-4
 
 # do we want gifs?! yes?
-CREATE_GIFS = False
+CREATE_GIFS = True
 
 # do we want to generate handwriting 
 GENERATE_HANDWRITING = True
@@ -82,6 +82,44 @@ def get_xy_data(n):
         x -= x.min()
         y -= y.min()
 	return x, y
+
+def get_old_data(total_size):
+
+    cur_count = 0
+    all_data = []
+    y0 = 0.0
+
+    # add a number of "strokes" each with different y coords
+    while cur_count < total_size:
+
+        # get number of points in this stroke
+        n = np.random.randint(50, 150)
+
+        # get xy data for stroke
+        x, y = get_xy_data(n)
+
+        # reshape and add y offset
+        x = x.reshape(-1, 1)-x.mean()
+        y = y.reshape(-1, 1)+y0
+
+        # make pen up/down feature
+        z = np.zeros_like(y)
+        # vector (n, 1)
+        z[0] = 1
+
+        # add random noise
+        x += np.random.normal(size=x.shape, scale=0.05)
+        y += np.random.normal(size=y.shape, scale=0.05)
+
+        # append data
+        all_data.append(np.hstack((x,y,z)))
+
+        # update count & y offset
+        cur_count += n
+        y0 += 6.0
+
+    # vstack all the data
+    return np.vstack(tuple(all_data))
 
 ######################################################################
 # Get training data -- the format returned is xi, yi, 0 except for new
@@ -230,7 +268,7 @@ class LSTMCascade(object):
 
             # Make an LSTM cell
             lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(
-                hidden_size * (i+1), forget_bias=0.0,
+                hidden_size * (i+1), forget_bias=1.0,
                 state_is_tuple=True)
 
             # Do dropout if needed
@@ -631,9 +669,13 @@ def main():
     # Import our handwriting data
     data = DataLoader()
 
-    our_train_data = data.data
-    our_valid_data = data.valid_data
-    our_query_data = data.valid_data[304:306]
+    # our_train_data = data.data
+    # our_valid_data = data.valid_data
+    # our_query_data = data.valid_data[304:306]
+
+    our_train_data = get_old_data(4000)
+    our_valid_data = get_old_data(1000)
+    our_query_data = get_old_data(500)
 
     # generate our train data
     train_data, train_seq = get_data(our_train_data)
